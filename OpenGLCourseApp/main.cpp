@@ -8,32 +8,37 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
-
 // Window Dimensions
 const GLint WIDTH = 720, HEIGHT = 480;
 
-GLuint VAO, VBO, Shader;
+GLuint VAO, VBO, Shader, XMoveId;
+
+GLboolean Direction;
+GLfloat MoveXOffset = 0, MoveXInterp = 0.0001f;
 
 // Vertex Shader
-static const char* vShader = "                                                \n\
-#version 330                                                                  \n\
-                                                                              \n\
-layout (location = 0) in vec3 pos;											  \n\
-                                                                              \n\
-void main()                                                                   \n\
-{                                                                             \n\
-    gl_Position = vec4(0.4 * pos.x, 0.4 * pos.y, pos.z, 1.0);				  \n\
+static const char* vShader = "                                                                \n\
+#version 330                                                                                  \n\
+                                                                                              \n\
+layout (location = 0) in vec3 pos;											                  \n\
+			                                                                                  \n\
+uniform float XMove;			                                                              \n\
+uniform float Scale = 0.3f;                                                                   \n\
+                                                                                              \n\
+void main()                                                                                   \n\
+{                                                                                             \n\
+    gl_Position = vec4(Scale * pos.x + (XMove * (Scale - 1.f)), Scale * pos.y, pos.z, 1.0);   \n\
 }";
 
 // Fragment Shader
-static const char* fShader = "                                                \n\
-#version 330                                                                  \n\
-                                                                              \n\
-out vec4 colour;                                                              \n\
-                                                                              \n\
-void main()                                                                   \n\
-{                                                                             \n\
-    colour = vec4(1.0, 0.0, 0.0, 1.0);                                        \n\
+static const char* fShader = "           \n\
+#version 330                             \n\
+                                         \n\
+out vec4 colour;                         \n\
+                                         \n\
+void main()                              \n\
+{                                        \n\
+    colour = vec4(1.0, 0.0, 0.0, 1.0);   \n\
 }";
 
 void AddShader(GLuint ShaderProgram, const char* ShaderCode, GLenum ShaderType) {
@@ -76,6 +81,7 @@ void CompileShaders() {
 
 	// Vertex Shader
 	AddShader(Shader, vShader, GL_VERTEX_SHADER);
+
 	// Fragment Shader
 	AddShader(Shader, fShader, GL_FRAGMENT_SHADER);
 
@@ -102,6 +108,9 @@ void CompileShaders() {
 		std::cout << "Error Validating Program" << eLog << std::endl;
 		return;
 	}
+
+	// Getting Id of the program variables
+	XMoveId = glGetUniformLocation(Shader, "XMove");
 }
 
 void CreateTriangle() {
@@ -207,6 +216,17 @@ int main()
 		glBindVertexArray(VAO);
 		glDrawArrays(GL_TRIANGLES, 0, 3);
 		glBindVertexArray(0);
+
+		// Moving Triangle
+		// moving using shader variable, @TODO can add UE interp code
+		Direction = (MoveXOffset >= 1.f || MoveXOffset <= -1.f) ? !Direction : Direction;
+		if (Direction) {
+			MoveXOffset += MoveXInterp;
+		}
+		else {
+			MoveXOffset -= MoveXInterp;
+		}
+		glUniform1f(XMoveId, MoveXOffset);
 
 		// Shader
 		glUseProgram(0); // unuse shader for the next statement code, maybe we use different shader in the next statements
