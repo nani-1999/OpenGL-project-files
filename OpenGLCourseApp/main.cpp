@@ -1,7 +1,8 @@
 // OpenGL DataTypes
 // GLint
 // GLboolean { GL_TRUE, GL_FALSE }
-//gl_Position = vec4(Scale * pos.x + (XMove * (Scale - 1.f)), Scale * pos.y, pos.z, 1.0);
+//gl_Position = vec4(Scale * pos.x + (XMove * (Scale - 1.f)), Scale * pos.y, pos.z, 1.0); // vertex shader
+//colour = vec4(1.0, 0.0, 0.0, 1.0); // fragment shader
 
 #include <iostream>
 #include <string.h>
@@ -16,23 +17,29 @@
 /* Window Dimensions */
 const GLint WIDTH = 720, HEIGHT = 480;
 
-GLuint VAO, VBO, Shader, XMoveId;
+GLuint VAO, VBO, Shader, /*XMoveId,*/ UniformModel, EBO, UniformProjection;
 
 GLboolean Direction;
-GLfloat MoveXOffset = 0, MoveXInterp = 0.0001f;
+GLfloat MoveXOffset = 0.f, InterpSpeed = 0.01f, Radian = glm::radians<GLfloat>(45)/* One Radian = PI/180 */, RotateInterp = 0.f;
 
 /* Vertex Shader */
+/* here pos is absolute value, we only updating it with model, so the color representation is connstantly same even when transforming */
+/* vCol will be passed out to the other shader, other shader with same variable name receives it */
 static const char* vShader = "                                                                \n\
 #version 330                                                                                  \n\
                                                                                               \n\
 layout (location = 0) in vec3 pos;											                  \n\
+out vec4 vCol;			                                                                      \n\
 			                                                                                  \n\
-uniform float XMove;			                                                              \n\
-uniform float Scale = 0.3f;                                                                   \n\
+//uniform float XMove;			                                                              \n\
+//uniform float Scale = 0.3f;                                                                 \n\
+uniform mat4 Model;                                                                           \n\
+uniform mat4 Projection;                                                                                              \n\
                                                                                               \n\
 void main()                                                                                   \n\
 {                                                                                             \n\
-    gl_Position = vec4(Scale * pos.x + (XMove * (Scale - 1.f)), Scale * pos.y, pos.z, 1.0);   \n\
+    gl_Position = Projection * Model * vec4(pos, 1.0f);                                                    \n\
+	vCol = vec4(clamp(pos, 0.f, 1.f), 1.f);                                                   \n\
 }";
 
 /* Fragment Shader */
@@ -40,10 +47,11 @@ static const char* fShader = "           \n\
 #version 330                             \n\
                                          \n\
 out vec4 colour;                         \n\
+in vec4 vCol;                            \n\
                                          \n\
 void main()                              \n\
 {                                        \n\
-    colour = vec4(1.0, 0.0, 0.0, 1.0);   \n\
+    colour = vCol;                       \n\
 }";
 
 void AddShader(GLuint ShaderProgram, const char* ShaderCode, GLenum ShaderType) {
@@ -113,33 +121,64 @@ void CompileShaders() {
 	}
 
 	/* Getting Id of Shader Program variables */
-	XMoveId = glGetUniformLocation(Shader, "XMove");
+	//XMoveId = glGetUniformLocation(Shader, "XMove");
+	UniformModel = glGetUniformLocation(Shader, "Model");
+	UniformProjection = glGetUniformLocation(Shader, "Projection");
 }
 
 void CreateTriangle() {
 
-	GLfloat vertices[] = {
-		-1.f, -1.f, 0.f,
-		 1.f, -1.f, 0.f,
-		 0.f,  1.f, 0.f
+	GLuint Indices[] = {
+		1, 2, 0,
+		3, 6, 2,
+		7, 4, 6,
+		5, 0, 4,
+		6, 0, 2,
+		3, 5, 7,
+		1, 3, 2,
+		3, 7, 6,
+		7, 5, 4,
+		5, 1, 0,
+		6, 4, 0,
+		3, 1, 5
 	};
+
+	GLfloat vertices[] = {
+		- 1.f, - 1.f, 1.f,
+		- 1.f, 1.f, 1.f,
+		- 1.f, - 1.f, - 1.f,
+		- 1.f, 1.f, - 1.f,
+		1.f, - 1.f, 1.f,
+		1.f, 1.f, 1.f,
+		1.f, - 1.f, - 1.f,
+		1.f, 1.f, - 1.f,
+	};
+
 
 	/* Attribute */
 	glGenVertexArrays(1, &VAO); /* creating one vertex array id */
-	glBindVertexArray(VAO); /* creating vertext array and binding it to a vertex array id */
+	glBindVertexArray(VAO); /* activating the vertex array object, so statement linking magic works */
 
-	/* Buffer */
+	/* Index Buffer */
+	/* once we activate VAO and then IBO and then VBO, then IBO and VBO are linked to VAO, statement linking magic */
+	glGenBuffers(1, &EBO);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO); /* activating */
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(Indices)/* total size in bytes */, Indices, GL_STATIC_DRAW);
+
+	/* Vertex Buffer */
 	glGenBuffers(1, &VBO); /* creating one buffer id */
-	glBindBuffer(GL_ARRAY_BUFFER, VBO); /* creating structure buffer and binding it to a buffer id */
+	glBindBuffer(GL_ARRAY_BUFFER, VBO); /* activating */
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-	/* Layout of Attribute */
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0); /* layout of our vertex attribute */
+	/* Layout of Vertex Buffer */
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0/* don't need stride i think */, nullptr); /* layout of our vertex attribute, don't need pointer since statement linking magic */
 	glEnableVertexAttribArray(0);
 
-	/* clearing binds, so it won't effect "next statement connections" */
+	/* After setting up all VAO, EBO and VBO, we don't need Vertices and Indices anymore, means changing Vertices or Indices in later code won't effect existing objects */
+
+	/* deactivating, so statement linking magic won't work */
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
 int main()
@@ -191,8 +230,14 @@ int main()
 		return 1;
 	}
 
+	/* Depth Buffer */
+	glEnable(GL_DEPTH_TEST);
+
 	/* Setting up desired viewport size */
 	glViewport(0, 0, bufferWidth, bufferHeight);
+
+	/* Shader Projection */
+	glm::mat4 Projection = glm::perspective(45.f, (GLfloat)bufferWidth / bufferHeight, 0.1f, 100.f);
 
 	/* Printing out GL Version */
 	std::cout << glGetString(GL_VERSION/*GL_SHADING_LANGUAGE_VERSION*/) << std::endl; // 4.6, major version: 4, minor version: 6
@@ -208,39 +253,56 @@ int main()
 		/* getting use input events, can handle any input events on window */
 		glfwPollEvents();
 
-		/* Clearing Window */
+		/* Updating Interp Values */
+		/* moving using shader variable, @TODO can add UE interp code */
+		Direction = (MoveXOffset >= 1.f || MoveXOffset <= -1.f) ? !Direction : Direction;
+		if (Direction) {
+			MoveXOffset += InterpSpeed;
+		}
+		else {
+			MoveXOffset -= InterpSpeed;
+		}
+		//glUniform1f(XMoveId, MoveXOffset); /* moving using shader */
+		/* Rotating Triangle */
+		RotateInterp = (RotateInterp >= 360.f) ? 0.f : RotateInterp + InterpSpeed;
+
+		/* Clearing BUFFERS before drawing anything */
 		/* clearing to draw a new frame, preventing drawing on top of another/previous frame */
 		glClearColor(0.f, 0.f, 0.f, 1.f); /* color data of the pixels, background resulting maybe */
-		glClear(GL_COLOR_BUFFER_BIT); /* clearing only color data of the pixel, since each pixel has a lot of data like stencel, depth, color, etc */
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); /* clearing only color data of the pixel, since each pixel has a lot of data like stencel, depth, color, etc */
 
 		/* Shader */
 		glUseProgram(Shader);
 
-
-		/* Triangle */
-		glBindVertexArray(VAO);
-		glDrawArrays(GL_TRIANGLES, 0, 3);
-		glBindVertexArray(0);
-
-		/* Moving Triangle */
-		/* moving using shader variable, @TODO can add UE interp code */
-		Direction = (MoveXOffset >= 1.f || MoveXOffset <= -1.f) ? !Direction : Direction;
-		if (Direction) {
-			MoveXOffset += MoveXInterp;
-		}
-		else {
-			MoveXOffset -= MoveXInterp;
-		}
-		//glUniform1f(XMoveId, MoveXOffset); /* moving using shader */
-
-		/* GLM Math */
+		/* Shader Model */
+		glm::mat4 model(1.f);
 		/* Translate */
-		glm::mat4 model;
-		model = glm::translate(model, glm::vec3(MoveXOffset, 0.f, 0.f));
+		/* if we do rotation first and translate after, it will behave like relative space translate. world space translate is the otherway around */
+		/* if we do scale first object origin will not hit desired max translate destination */
+		model = glm::translate(model, glm::vec3(0.f, 0.f, -2.f)); /* translate matrix */
+		/* Scale */
+		model = glm::scale(model, glm::vec3(0.3f, 0.3f, 0.3f));
+		/* Rotate */
+		/* maybe do scale first and rotate, to prevent stretching i think */
+		model = glm::rotate(model, glm::radians<GLfloat>(RotateInterp), glm::vec3(0.2f, 1.f, 0.5f)); /* One Radian = PI/180 */
 
-		// Shader
-		glUseProgram(0); // unuse shader for the next statement code, maybe we use different shader in the next statements
+		/* Sending Model to Shader */
+		glUniformMatrix4fv(UniformModel, 1, GL_FALSE, glm::value_ptr(model));
+		/* Sending Projection to Shader */
+		glUniformMatrix4fv(UniformProjection, 1, GL_FALSE, glm::value_ptr(Projection)); /* perspective starts at origin, so if there is any object in origin will look zoomed in */
 
+		/* Drawing Triangle */
+		glBindVertexArray(VAO); /* activating vertex array, so can draw */
+		//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO); /* no need i think, since drawing fine */
+		//glDrawArrays(GL_TRIANGLES, 0, 3);
+		/* Draws whatever that is currently activated in vertex array */
+		glDrawElements(GL_TRIANGLES/* takes the indices as first 3 to draw */, 36/* total number of indices to draw */, GL_UNSIGNED_INT, nullptr); /* we don't need pointer, since we bind IBO in previous statement. it also working without IBO activating, maybe because VAO is activated in previous statement which VAO has link to EBO */
+		/* Deactivating so we don't have problem in next statements */
+		glBindVertexArray(0);
+		//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+		/* Shader */
+		glUseProgram(0); /* unuse shader for the next statement code, maybe we use different shader in the next statements */
 
 		glfwSwapBuffers(mainWindow);
 	}
