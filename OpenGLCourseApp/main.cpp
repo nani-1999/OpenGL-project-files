@@ -5,7 +5,8 @@
 //colour = vec4(1.0, 0.0, 0.0, 1.0); // fragment shader
 
 #include <iostream>
-#include <string.h>
+#include <string>
+#include <vector>
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -14,116 +15,37 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+#include "Mesh.h"
+#include "Shader.h"
+
 /* Window Dimensions */
 const GLint WIDTH = 720, HEIGHT = 480;
 
-GLuint VAO, VBO, Shader, /*XMoveId,*/ UniformModel, EBO, UniformProjection;
+/* Meshes */
+std::vector<Mesh*> Meshes;
 
+/* Shader */
+std::vector<Shader*> Shaders;
+
+/* Interpolation */
 GLboolean Direction;
-GLfloat MoveXOffset = 0.f, InterpSpeed = 0.01f, Radian = glm::radians<GLfloat>(45)/* One Radian = PI/180 */, RotateInterp = 0.f;
-
-/* Vertex Shader */
-/* here pos is absolute value, we only updating it with model, so the color representation is connstantly same even when transforming */
-/* vCol will be passed out to the other shader, other shader with same variable name receives it */
-static const char* vShader = "                                                                \n\
-#version 330                                                                                  \n\
-                                                                                              \n\
-layout (location = 0) in vec3 pos;											                  \n\
-out vec4 vCol;			                                                                      \n\
-			                                                                                  \n\
-//uniform float XMove;			                                                              \n\
-//uniform float Scale = 0.3f;                                                                 \n\
-uniform mat4 Model;                                                                           \n\
-uniform mat4 Projection;                                                                                              \n\
-                                                                                              \n\
-void main()                                                                                   \n\
-{                                                                                             \n\
-    gl_Position = Projection * Model * vec4(pos, 1.0f);                                                    \n\
-	vCol = vec4(clamp(pos, 0.f, 1.f), 1.f);                                                   \n\
-}";
-
-/* Fragment Shader */
-static const char* fShader = "           \n\
-#version 330                             \n\
-                                         \n\
-out vec4 colour;                         \n\
-in vec4 vCol;                            \n\
-                                         \n\
-void main()                              \n\
-{                                        \n\
-    colour = vCol;                       \n\
-}";
-
-void AddShader(GLuint ShaderProgram, const char* ShaderCode, GLenum ShaderType) {
-	/* Creates a shader and returns its id */
-	GLint CreatedShader = glCreateShader(ShaderType);
-
-	/* Shader Code */
-	const GLint CodeLength = strlen(ShaderCode);
-	glShaderSource(CreatedShader, 1, &ShaderCode, &CodeLength);
-
-	/* Compiling Shader */
-	glCompileShader(CreatedShader);
-
-	/* Checking for Error */
-	GLint result = 0;
-	GLchar eLog[1024] = { "" };
-	glGetShaderiv(CreatedShader, GL_COMPILE_STATUS, &result);
-	if (!result) {
-		glGetShaderInfoLog(CreatedShader, sizeof(eLog), nullptr, eLog);
-		std::cout << "Error Compiling Shader" << eLog << std::endl;
-		return;
-	}
-
-	/* Attaching Shader */
-	glAttachShader(ShaderProgram, CreatedShader);
-
-	return;
-}
+GLfloat MoveOffset = 0.f, InterpSpeed = 0.01f, RotateInterp = 0.f;
 
 void CompileShaders() {
-	Shader = glCreateProgram(); /* creates a program i.e., shader program and returns its id */
+	/* Creating a Shader Program */
+	Shader* shader = new Shader();
 
-	if (!Shader) {
-		std::cout << "Failed to Create Shader Program" << std::endl;
-		glfwTerminate();
-		return;
-	}
-
+	/* Adding Shaders to Shader Program */
 	/* Vertex Shader */
-	AddShader(Shader, vShader, GL_VERTEX_SHADER);
-
+	shader->AddShader("Shaders/vshader.vert", GL_VERTEX_SHADER);
 	/* Fragment Shader */
-	AddShader(Shader, fShader, GL_FRAGMENT_SHADER);
+	shader->AddShader("Shaders/fshader.frag", GL_FRAGMENT_SHADER);
 
-	/* Checking for Errors */
-	GLint result = 0;
-	GLchar eLog[1024] = { "" };
+	/* Linking And Validating Shader Program */
+	shader->LinkAndValidate();
 
-	/* Linking Shader Program */
-	glLinkProgram(Shader);
-	/* checking link status */
-	glGetProgramiv(Shader, GL_LINK_STATUS, &result);
-	if (!result) {
-		glGetProgramInfoLog(Shader, sizeof(eLog), nullptr, eLog);
-		std::cout << "Error Linking Program" << eLog << std::endl;
-		return;
-	}
-
-	/* Validating Shader Program */
-	glValidateProgram(Shader);
-	/* checking valid status */
-	glGetProgramiv(Shader, GL_VALIDATE_STATUS, &result);
-	if (!result) {
-		glGetProgramInfoLog(Shader, sizeof(eLog), nullptr, eLog);
-		std::cout << "Error Validating Program" << eLog << std::endl;
-		return;
-	}
-
-	/* Getting Id of Shader Program variables */
-	//XMoveId = glGetUniformLocation(Shader, "XMove");
-	UniformModel = glGetUniformLocation(Shader, "Model");
-	UniformProjection = glGetUniformLocation(Shader, "Projection");
+	/* Adding our new shader to Shaders */
+	Shaders.push_back(shader);
 }
 
 void CreateTriangle() {
@@ -143,7 +65,7 @@ void CreateTriangle() {
 		3, 1, 5
 	};
 
-	GLfloat vertices[] = {
+	GLfloat Vertices[] = {
 		- 1.f, - 1.f, 1.f,
 		- 1.f, 1.f, 1.f,
 		- 1.f, - 1.f, - 1.f,
@@ -154,31 +76,12 @@ void CreateTriangle() {
 		1.f, 1.f, - 1.f,
 	};
 
-
-	/* Attribute */
-	glGenVertexArrays(1, &VAO); /* creating one vertex array id */
-	glBindVertexArray(VAO); /* activating the vertex array object, so statement linking magic works */
-
-	/* Index Buffer */
-	/* once we activate VAO and then IBO and then VBO, then IBO and VBO are linked to VAO, statement linking magic */
-	glGenBuffers(1, &EBO);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO); /* activating */
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(Indices)/* total size in bytes */, Indices, GL_STATIC_DRAW);
-
-	/* Vertex Buffer */
-	glGenBuffers(1, &VBO); /* creating one buffer id */
-	glBindBuffer(GL_ARRAY_BUFFER, VBO); /* activating */
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-	/* Layout of Vertex Buffer */
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0/* don't need stride i think */, nullptr); /* layout of our vertex attribute, don't need pointer since statement linking magic */
-	glEnableVertexAttribArray(0);
-
-	/* After setting up all VAO, EBO and VBO, we don't need Vertices and Indices anymore, means changing Vertices or Indices in later code won't effect existing objects */
-
-	/* deactivating, so statement linking magic won't work */
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glBindVertexArray(0);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+	Mesh* mesh1 = new Mesh();
+	mesh1->CreateMesh(Vertices, sizeof(Vertices), Indices, sizeof(Indices));
+	Meshes.push_back(mesh1);
+	Mesh* mesh2 = new Mesh();
+	mesh2->CreateMesh(Vertices, sizeof(Vertices), Indices, sizeof(Indices));
+	Meshes.push_back(mesh2);
 }
 
 int main()
@@ -244,8 +147,13 @@ int main()
 
 	/* Creating Triangle */
 	CreateTriangle();
+
 	/* Compiling Shaders */
 	CompileShaders();
+	/* Getting Shader[0] Variable ID's */
+	GLuint UniformProjection, UniformModel = 0;
+	UniformProjection = Shaders.at(0)->GetShaderUniformLocation("Projection");
+	UniformModel = Shaders.at(0)->GetShaderUniformLocation("Model");
 
 	/* loop until glfw window close button is pressed */
 	/* window doesn't close by default by pressing close button, so we have to check if closebutton is true or not */
@@ -255,12 +163,12 @@ int main()
 
 		/* Updating Interp Values */
 		/* moving using shader variable, @TODO can add UE interp code */
-		Direction = (MoveXOffset >= 1.f || MoveXOffset <= -1.f) ? !Direction : Direction;
+		Direction = (MoveOffset >= 1.f || MoveOffset <= -1.f) ? !Direction : Direction;
 		if (Direction) {
-			MoveXOffset += InterpSpeed;
+			MoveOffset += InterpSpeed * 0.01f;
 		}
 		else {
-			MoveXOffset -= InterpSpeed;
+			MoveOffset -= InterpSpeed * 0.01f;
 		}
 		//glUniform1f(XMoveId, MoveXOffset); /* moving using shader */
 		/* Rotating Triangle */
@@ -272,36 +180,36 @@ int main()
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); /* clearing only color data of the pixel, since each pixel has a lot of data like stencel, depth, color, etc */
 
 		/* Shader */
-		glUseProgram(Shader);
+		Shaders.at(0)->UseShader();
+
+		/* Shader Projection */
+		glUniformMatrix4fv(UniformProjection, 1, GL_FALSE, glm::value_ptr(Projection)); /* perspective starts at origin, so if there is any object in origin will look zoomed in */
 
 		/* Shader Model */
 		glm::mat4 model(1.f);
 		/* Translate */
-		/* if we do rotation first and translate after, it will behave like relative space translate. world space translate is the otherway around */
-		/* if we do scale first object origin will not hit desired max translate destination */
-		model = glm::translate(model, glm::vec3(0.f, 0.f, -2.f)); /* translate matrix */
+		model = glm::translate(model, glm::vec3(0.6f, MoveOffset * 0.5f, -2.f));
 		/* Scale */
 		model = glm::scale(model, glm::vec3(0.3f, 0.3f, 0.3f));
 		/* Rotate */
-		/* maybe do scale first and rotate, to prevent stretching i think */
-		model = glm::rotate(model, glm::radians<GLfloat>(RotateInterp), glm::vec3(0.2f, 1.f, 0.5f)); /* One Radian = PI/180 */
-
+		model = glm::rotate(model, glm::radians<GLfloat>(RotateInterp), glm::vec3(0.2f, 1.f, 0.5f));
 		/* Sending Model to Shader */
 		glUniformMatrix4fv(UniformModel, 1, GL_FALSE, glm::value_ptr(model));
-		/* Sending Projection to Shader */
-		glUniformMatrix4fv(UniformProjection, 1, GL_FALSE, glm::value_ptr(Projection)); /* perspective starts at origin, so if there is any object in origin will look zoomed in */
 
-		/* Drawing Triangle */
-		glBindVertexArray(VAO); /* activating vertex array, so can draw */
-		//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO); /* no need i think, since drawing fine */
-		//glDrawArrays(GL_TRIANGLES, 0, 3);
-		/* Draws whatever that is currently activated in vertex array */
-		glDrawElements(GL_TRIANGLES/* takes the indices as first 3 to draw */, 36/* total number of indices to draw */, GL_UNSIGNED_INT, nullptr); /* we don't need pointer, since we bind IBO in previous statement. it also working without IBO activating, maybe because VAO is activated in previous statement which VAO has link to EBO */
-		/* Deactivating so we don't have problem in next statements */
-		glBindVertexArray(0);
-		//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+		// Rendering Mesh
+		Meshes.at(0)->RenderMesh();
+
+		/* Shader Model */
+		//model = glm::mat4(1.f); /* We need to reset the model value and apply new values, since it has previous transformation values */
+		//model = glm::translate(model, glm::vec3(-0.6f, - MoveOffset * 0.5f , -2.f));
+		//model = glm::scale(model, glm::vec3(0.3f, 0.3f, 0.3f));
+		//model = glm::rotate(model, glm::radians<GLfloat>(RotateInterp), glm::vec3(0.2f, 1.f, 0.5f)); /* One Radian = PI/180 */
+		//glUniformMatrix4fv(UniformModel, 1, GL_FALSE, glm::value_ptr(model));
+		//glUniformMatrix4fv(UniformProjection, 1, GL_FALSE, glm::value_ptr(Projection));
+		//Meshes.at(1)->RenderMesh();
 
 		/* Shader */
+		/* unuses Shader Progrom, since it is the only Shader that is beging used in the previous statements */
 		glUseProgram(0); /* unuse shader for the next statement code, maybe we use different shader in the next statements */
 
 		glfwSwapBuffers(mainWindow);

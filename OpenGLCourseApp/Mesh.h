@@ -1,6 +1,5 @@
 #pragma once
 
-#include <iostream>
 #include <GL/glew.h>
 
 class Mesh {
@@ -10,7 +9,7 @@ public:
 
 	/* Creates a Mesh */
 	/* Size of Vertices in Bytes */
-	void CreateMesh(GLfloat* Vertices, GLuint SizeOfVertices, GLint* Indices, GLuint SizeOfIndices);
+	void CreateMesh(GLfloat* Vertices, GLuint NumberOfVertices, GLuint* Indices, GLuint NumberOfIndices);
 	/* Draws a Mesh to the screen */
 	void RenderMesh();
 	/* deletes the mesh from graphics card */
@@ -18,8 +17,9 @@ public:
 
 private:
 	/* IDs */
-	/* Vertex Array Object */
-	GLuint VAO, EBO, VBO;
+	GLuint VAO, IBO, VBO;
+
+	/* Number of Indices */
 	GLuint IndicesCount;
 };
 
