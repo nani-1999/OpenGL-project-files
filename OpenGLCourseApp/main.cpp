@@ -17,6 +17,7 @@
 
 #include "Mesh.h"
 #include "Shader.h"
+#include "Window.h"
 
 /* Window Dimensions */
 const GLint WIDTH = 720, HEIGHT = 480;
@@ -86,7 +87,7 @@ void CreateTriangle() {
 
 int main()
 {
-	/* initializing GLFW */
+	/* GLFW Initialization */
 	if (!glfwInit()) {
 		std::cout << "GLFW initialization falied!" << std::endl;
 		glfwTerminate(); /* terminitaing glfw if we fail to initialize */
@@ -95,52 +96,30 @@ int main()
 
 	/* after this is glfw ready to be used */
 
-	/* Setting up window properties */
-	/* opengl version */
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3); /* what to alter and value */
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3); /* so its 3.3 version */
-	/* backwards compatibility  */
-	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); /* core profile = no backwards compatibility, means no depricated code should run or else throw error */
-	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); /* forward compact, means upto date code */
-
-	/* Creating our glfw window */
-	GLFWwindow* mainWindow = glfwCreateWindow(WIDTH, HEIGHT, "Test Window", nullptr, nullptr);
-	if (mainWindow == nullptr) {
-		//std::cout << "Create Window Failed!" << std::endl;
-		glfwTerminate();
-		return 1;
-	}
-
-	/* after this is window created successfully */
-
-	/* Getting available frame size to draw size information */
-	int bufferWidth, bufferHeight = 1;
-	glfwGetFramebufferSize(mainWindow, &bufferWidth, &bufferHeight);
-
-	/* setting context for GLEW to use */
-	/* setting up window for GLEW to use, incase if we have muliple GLFWwindow's */
-	/* first we need to make sure a GLFWwindow is current context */
-	glfwMakeContextCurrent(mainWindow);
+	/* Window Setup */
+	Window* mainWindow = new Window(WIDTH, HEIGHT, "Nani OpenGL");
+	/* Buffer Size that is Available */
+	glm::vec<2, GLint> BufferSize = mainWindow->GetWindowFrameBufferSize();
 
 	/* allowing glew to use modern features */
 	glewExperimental = GL_TRUE;
-
-	/* Initializing GLEW */
+	/* GLEW Initialization */
 	if (glewInit() != GLEW_OK) {
 		std::cout << "GLEW initialization failed!" << std::endl;
-		glfwDestroyWindow(mainWindow);
+		glfwDestroyWindow(mainWindow->GetWindow());
 		glfwTerminate();
 		return 1;
 	}
 
 	/* Depth Buffer */
+	/* to prevent random normal infacing */
 	glEnable(GL_DEPTH_TEST);
 
-	/* Setting up desired viewport size */
-	glViewport(0, 0, bufferWidth, bufferHeight);
+	/* Viewport Size */
+	glViewport(0, 0, BufferSize.x, BufferSize.y);
 
 	/* Shader Projection */
-	glm::mat4 Projection = glm::perspective(45.f, (GLfloat)bufferWidth / bufferHeight, 0.1f, 100.f);
+	glm::mat4 Projection = glm::perspective(45.f, (GLfloat)BufferSize.x / BufferSize.y, 0.1f, 100.f);
 
 	/* Printing out GL Version */
 	std::cout << glGetString(GL_VERSION/*GL_SHADING_LANGUAGE_VERSION*/) << std::endl; // 4.6, major version: 4, minor version: 6
@@ -157,7 +136,7 @@ int main()
 
 	/* loop until glfw window close button is pressed */
 	/* window doesn't close by default by pressing close button, so we have to check if closebutton is true or not */
-	while (!glfwWindowShouldClose(mainWindow)) {
+	while (!glfwWindowShouldClose(mainWindow->GetWindow())) {
 		/* getting use input events, can handle any input events on window */
 		glfwPollEvents();
 
@@ -186,13 +165,13 @@ int main()
 		glUniformMatrix4fv(UniformProjection, 1, GL_FALSE, glm::value_ptr(Projection)); /* perspective starts at origin, so if there is any object in origin will look zoomed in */
 
 		/* Shader Model */
-		glm::mat4 model(1.f);
+		glm::mat<4, 4, GLfloat> model(1.f);
 		/* Translate */
-		model = glm::translate(model, glm::vec3(0.6f, MoveOffset * 0.5f, -2.f));
+		model = glm::translate(model, glm::vec<3, GLfloat>(0.6f, MoveOffset * 0.5f, -2.f));
 		/* Scale */
-		model = glm::scale(model, glm::vec3(0.3f, 0.3f, 0.3f));
+		model = glm::scale(model, glm::vec<3, GLfloat>(0.3f, 0.3f, 0.3f));
 		/* Rotate */
-		model = glm::rotate(model, glm::radians<GLfloat>(RotateInterp), glm::vec3(0.2f, 1.f, 0.5f));
+		model = glm::rotate(model, glm::radians<GLfloat>(RotateInterp), glm::vec<3, GLfloat>(0.2f, 1.f, 0.5f));
 		/* Sending Model to Shader */
 		glUniformMatrix4fv(UniformModel, 1, GL_FALSE, glm::value_ptr(model));
 
@@ -200,19 +179,19 @@ int main()
 		Meshes.at(0)->RenderMesh();
 
 		/* Shader Model */
-		//model = glm::mat4(1.f); /* We need to reset the model value and apply new values, since it has previous transformation values */
-		//model = glm::translate(model, glm::vec3(-0.6f, - MoveOffset * 0.5f , -2.f));
-		//model = glm::scale(model, glm::vec3(0.3f, 0.3f, 0.3f));
-		//model = glm::rotate(model, glm::radians<GLfloat>(RotateInterp), glm::vec3(0.2f, 1.f, 0.5f)); /* One Radian = PI/180 */
-		//glUniformMatrix4fv(UniformModel, 1, GL_FALSE, glm::value_ptr(model));
-		//glUniformMatrix4fv(UniformProjection, 1, GL_FALSE, glm::value_ptr(Projection));
-		//Meshes.at(1)->RenderMesh();
+		model = glm::mat<4, 4, GLfloat>(1.f); /* We need to reset the model value and apply new values, since it has previous transformation values */
+		model = glm::translate(model, glm::vec<3, GLfloat>(-0.6f, - MoveOffset * 0.5f , -2.f));
+		model = glm::scale(model, glm::vec<3, GLfloat>(0.3f, 0.3f, 0.3f));
+		model = glm::rotate(model, glm::radians<GLfloat>(RotateInterp), glm::vec<3, GLfloat>(0.2f, 1.f, 0.5f)); /* One Radian = PI/180 */
+		glUniformMatrix4fv(UniformModel, 1, GL_FALSE, glm::value_ptr(model));
+		glUniformMatrix4fv(UniformProjection, 1, GL_FALSE, glm::value_ptr(Projection));
+		Meshes.at(1)->RenderMesh();
 
 		/* Shader */
 		/* unuses Shader Progrom, since it is the only Shader that is beging used in the previous statements */
 		glUseProgram(0); /* unuse shader for the next statement code, maybe we use different shader in the next statements */
 
-		glfwSwapBuffers(mainWindow);
+		glfwSwapBuffers(mainWindow->GetWindow());
 	}
 
 	glfwTerminate();
