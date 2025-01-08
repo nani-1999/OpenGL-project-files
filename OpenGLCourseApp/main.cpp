@@ -98,8 +98,11 @@ int main()
 
 	/* Window Setup */
 	Window* mainWindow = new Window(WIDTH, HEIGHT, "Nani OpenGL");
+	mainWindow->MakeCurrent();
 	/* Buffer Size that is Available */
 	glm::vec<2, GLint> BufferSize = mainWindow->GetWindowFrameBufferSize();
+
+	Window* secondWindow = new Window(300, 300, "Second Window", mainWindow->GetWindow());
 
 	/* allowing glew to use modern features */
 	glewExperimental = GL_TRUE;

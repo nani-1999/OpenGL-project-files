@@ -6,7 +6,7 @@
 
 class Window {
 public:
-	Window(GLint Width, GLint Height, const GLchar* Title = "");
+	Window(GLint Width, GLint Height, const GLchar* Title = "", GLFWwindow* SharedWindow = nullptr);
 	~Window();
 
 	/* Returns FramebufferSize of window */
@@ -14,6 +14,12 @@ public:
 
 	/* Returns Current Window */
 	GLFWwindow* GetWindow() const { return window; }
+
+	/* Context Current */
+	void MakeCurrent();
+
+	/* Clear Window */
+	void ClearWindow();
 
 private:
 	GLFWwindow* window = nullptr;
