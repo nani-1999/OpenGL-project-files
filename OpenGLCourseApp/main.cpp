@@ -87,27 +87,22 @@ void CreateTriangle() {
 
 int main()
 {
-	/* GLFW Initialization */
-	if (!glfwInit()) {
+	/* GLFW */
+	if (!glfwInit()) { /* GLFW Initialization */
 		std::cout << "GLFW initialization falied!" << std::endl;
 		glfwTerminate(); /* terminitaing glfw if we fail to initialize */
 		return 1; /* unsuccessful return */
 	}
 
-	/* after this is glfw ready to be used */
-
-	/* Window Setup */
+	/* Window */
 	Window* mainWindow = new Window(WIDTH, HEIGHT, "Nani OpenGL");
 	mainWindow->MakeCurrent();
-	/* Buffer Size that is Available */
+	/* Buffer Size */
 	glm::vec<2, GLint> BufferSize = mainWindow->GetWindowFrameBufferSize();
-
-	Window* secondWindow = new Window(300, 300, "Second Window", mainWindow->GetWindow());
-
-	/* allowing glew to use modern features */
-	glewExperimental = GL_TRUE;
-	/* GLEW Initialization */
-	if (glewInit() != GLEW_OK) {
+	
+	/* GLEW */
+	glewExperimental = GL_TRUE; /* allowing glew to use modern features */
+	if (glewInit() != GLEW_OK) { /* GLEW Initialization */
 		std::cout << "GLEW initialization failed!" << std::endl;
 		glfwDestroyWindow(mainWindow->GetWindow());
 		glfwTerminate();
@@ -115,30 +110,29 @@ int main()
 	}
 
 	/* Depth Buffer */
-	/* to prevent random normal infacing */
-	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_DEPTH_TEST); /* to prevent random normal infacing */
 
 	/* Viewport Size */
-	glViewport(0, 0, BufferSize.x, BufferSize.y);
-
-	/* Shader Projection */
-	glm::mat4 Projection = glm::perspective(45.f, (GLfloat)BufferSize.x / BufferSize.y, 0.1f, 100.f);
+	glViewport(0, 0, BufferSize.x, BufferSize.y); /* setting viewport size of context current window */
 
 	/* Printing out GL Version */
-	std::cout << glGetString(GL_VERSION/*GL_SHADING_LANGUAGE_VERSION*/) << std::endl; // 4.6, major version: 4, minor version: 6
+	std::cout << glGetString(GL_VERSION/*GL_SHADING_LANGUAGE_VERSION*/) << std::endl;
 
 	/* Creating Triangle */
 	CreateTriangle();
 
-	/* Compiling Shaders */
+	/* Shader */
 	CompileShaders();
 	/* Getting Shader[0] Variable ID's */
 	GLuint UniformProjection, UniformModel = 0;
 	UniformProjection = Shaders.at(0)->GetShaderUniformLocation("Projection");
 	UniformModel = Shaders.at(0)->GetShaderUniformLocation("Model");
 
+	/* Shader Projection */
+	glm::mat4 Projection = glm::perspective(45.f, (GLfloat)BufferSize.x / BufferSize.y, 0.1f, 100.f);
+
 	/* loop until glfw window close button is pressed */
-	/* window doesn't close by default by pressing close button, so we have to check if closebutton is true or not */
+	/* when we press the close buttion of a window, it sets glfwWindowShouldClose(thatwindow, GLFW_TRUE); */
 	while (!glfwWindowShouldClose(mainWindow->GetWindow())) {
 		/* getting use input events, can handle any input events on window */
 		glfwPollEvents();
@@ -158,8 +152,9 @@ int main()
 
 		/* Clearing BUFFERS before drawing anything */
 		/* clearing to draw a new frame, preventing drawing on top of another/previous frame */
-		glClearColor(0.f, 0.f, 0.f, 1.f); /* color data of the pixels, background resulting maybe */
+		glClearColor(0.f, 0.f, 0.f, 0.f); /* color data of the pixels, background resulting maybe */
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); /* clearing only color data of the pixel, since each pixel has a lot of data like stencel, depth, color, etc */
+
 
 		/* Shader */
 		Shaders.at(0)->UseShader();
