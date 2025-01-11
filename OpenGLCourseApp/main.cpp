@@ -155,7 +155,6 @@ int main()
 		glClearColor(0.f, 0.f, 0.f, 0.f); /* color data of the pixels, background resulting maybe */
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); /* clearing only color data of the pixel, since each pixel has a lot of data like stencel, depth, color, etc */
 
-
 		/* Shader */
 		Shaders.at(0)->UseShader();
 
@@ -189,9 +188,21 @@ int main()
 		/* unuses Shader Progrom, since it is the only Shader that is beging used in the previous statements */
 		glUseProgram(0); /* unuse shader for the next statement code, maybe we use different shader in the next statements */
 
+
+		/* testing input */
+		std::vector<bool> WindowKeyEvents = mainWindow->GetKeyEvents();
+
+		if (WindowKeyEvents.at(GLFW_KEY_1)) {
+			std::cout << "GLFW_KEY_1" << std::endl;
+		}
+		if (WindowKeyEvents.at(GLFW_KEY_TAB)) {
+			std::cout << "GLFW_KEY_TAB" << std::endl;
+		}
+
 		glfwSwapBuffers(mainWindow->GetWindow());
 	}
 
+	mainWindow->ClearWindow();
 	glfwTerminate();
 	return 0;
 }

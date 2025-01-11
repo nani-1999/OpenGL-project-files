@@ -7,6 +7,3 @@ struct NPair {
 	K Key;
 	V Value;
 };
-
-void
-void Find(std::)
