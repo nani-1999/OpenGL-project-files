@@ -8,6 +8,7 @@ Mesh::Mesh() :
 	VBO{ 0 },
 	IndicesCount{ 0 }
 { 
+	/* @LOG */
 	std::cout << "Constructing Mesh" << std::endl;
 }
 Mesh::~Mesh() {

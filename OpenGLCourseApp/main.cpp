@@ -19,6 +19,8 @@
 #include "Shader.h"
 #include "Window.h"
 
+#include <iomanip>
+
 /* Window Dimensions */
 const GLint WIDTH = 720, HEIGHT = 480;
 
@@ -87,6 +89,7 @@ void CreateTriangle() {
 
 int main()
 {
+	std::cout << std::fixed << std::setprecision(3);
 	/* GLFW */
 	if (!glfwInit()) { /* GLFW Initialization */
 		std::cout << "GLFW initialization falied!" << std::endl;
@@ -131,9 +134,11 @@ int main()
 	/* Shader Projection */
 	glm::mat4 Projection = glm::perspective(45.f, (GLfloat)BufferSize.x / BufferSize.y, 0.1f, 100.f);
 
+
+	GLboolean bCloseWindow = false;
 	/* loop until glfw window close button is pressed */
 	/* when we press the close buttion of a window, it sets glfwWindowShouldClose(thatwindow, GLFW_TRUE); */
-	while (!glfwWindowShouldClose(mainWindow->GetWindow())) {
+	while (!bCloseWindow/*!glfwWindowShouldClose(mainWindow->GetWindow())*/) {
 		/* getting use input events, can handle any input events on window */
 		glfwPollEvents();
 
@@ -158,10 +163,10 @@ int main()
 		/* Shader */
 		Shaders.at(0)->UseShader();
 
-		/* Shader Projection */
+		/* Projection Matrix */
 		glUniformMatrix4fv(UniformProjection, 1, GL_FALSE, glm::value_ptr(Projection)); /* perspective starts at origin, so if there is any object in origin will look zoomed in */
 
-		/* Shader Model */
+		/* Shader Model 1 */
 		glm::mat<4, 4, GLfloat> model(1.f);
 		/* Translate */
 		model = glm::translate(model, glm::vec<3, GLfloat>(0.6f, MoveOffset * 0.5f, -2.f));
@@ -169,35 +174,27 @@ int main()
 		model = glm::scale(model, glm::vec<3, GLfloat>(0.3f, 0.3f, 0.3f));
 		/* Rotate */
 		model = glm::rotate(model, glm::radians<GLfloat>(RotateInterp), glm::vec<3, GLfloat>(0.2f, 1.f, 0.5f));
-		/* Sending Model to Shader */
+		/* Model Matrix */
 		glUniformMatrix4fv(UniformModel, 1, GL_FALSE, glm::value_ptr(model));
-
-		// Rendering Mesh
+		/* Rendering Mesh */
 		Meshes.at(0)->RenderMesh();
 
-		/* Shader Model */
+		/* Shader Model 2 */
 		model = glm::mat<4, 4, GLfloat>(1.f); /* We need to reset the model value and apply new values, since it has previous transformation values */
 		model = glm::translate(model, glm::vec<3, GLfloat>(-0.6f, - MoveOffset * 0.5f , -2.f));
 		model = glm::scale(model, glm::vec<3, GLfloat>(0.3f, 0.3f, 0.3f));
 		model = glm::rotate(model, glm::radians<GLfloat>(RotateInterp), glm::vec<3, GLfloat>(0.2f, 1.f, 0.5f)); /* One Radian = PI/180 */
 		glUniformMatrix4fv(UniformModel, 1, GL_FALSE, glm::value_ptr(model));
-		glUniformMatrix4fv(UniformProjection, 1, GL_FALSE, glm::value_ptr(Projection));
 		Meshes.at(1)->RenderMesh();
+
+
 
 		/* Shader */
 		/* unuses Shader Progrom, since it is the only Shader that is beging used in the previous statements */
 		glUseProgram(0); /* unuse shader for the next statement code, maybe we use different shader in the next statements */
 
-
-		/* testing input */
-		std::vector<bool> WindowKeyEvents = mainWindow->GetKeyEvents();
-
-		if (WindowKeyEvents.at(GLFW_KEY_1)) {
-			std::cout << "GLFW_KEY_1" << std::endl;
-		}
-		if (WindowKeyEvents.at(GLFW_KEY_TAB)) {
-			std::cout << "GLFW_KEY_TAB" << std::endl;
-		}
+		/* Instantly closes window */
+		if (mainWindow->GetKeyEvents().at(GLFW_KEY_ESCAPE)) bCloseWindow = true;
 
 		glfwSwapBuffers(mainWindow->GetWindow());
 	}

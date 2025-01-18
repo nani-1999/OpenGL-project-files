@@ -8,6 +8,7 @@
 Shader::Shader() :
 	ShaderProgram{ 0 }
 {
+	/* @LOG */
 	std::cout << "Constructing Shader" << std::endl;
 
 	/* Creates a Program i.e., Shader Program on Construction */

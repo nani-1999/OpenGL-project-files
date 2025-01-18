@@ -9,11 +9,14 @@
 
 #include "Nani/NaniTypes.h"
 
-std::vector<GLFWwindow*> WindowIndices;
-std::vector<std::vector<bool>> KeyEvents;
-std::vector<glm::vec<2, GLfloat>> MouseInput;
-
-static std::vector<NPair<GLFWwindow*, std::vector<bool>>> AllWindowsKeyEvents; /* has reference to all GLFWwindow's and its key events, made for Input to use */
+/* Window Indexes */
+static std::vector<GLFWwindow*> WindowIndices;
+/* Key Events Respectively */
+static std::vector<std::vector<bool>> KeyEvents;
+/* Mouse Inputs Respectively */
+static std::vector<glm::vec<2, GLfloat>> MouseInput;
+/* Delta Mouse Input */
+static std::vector<glm::vec<2, GLfloat>> MouseDeltaInput;
 
 class Window {
 public:
@@ -34,7 +37,9 @@ public:
 
 	/* Input */
 	/* Returns KeyEvents of GLFWwindow */
-	std::vector<bool> GetKeyEvents() const;
+	const std::vector<bool>& GetKeyEvents() const;
+	/* Returns MouseInputs of GLFWwindow */
+	const glm::vec<2, GLfloat>& GetMouseInput() const;
 
 private:
 	/* Window */
@@ -43,8 +48,12 @@ private:
 	const GLchar* WindowTitle;
 
 	/* Input */
+	static GLuint GetWindowIndex(GLFWwindow* WindowToFind);
 	void InitInput(); /* Initializing Window Input */
 	void ClearInput(); /* to remove window input */
-	/* Callback that is automatically called by GLFW */
-	static void InputEvent_Callback(GLFWwindow* window, int Key, int Code, int Action, int Mode); /* must be static */
+	/* Callbacks */
+	static void InputEvent_Callback(GLFWwindow* window, int key, int scancode, int action, int mods); /* must be static */
+	static void CursorPos_Callback(GLFWwindow* window, double xpos, double ypos);
+	/* Mouse Delta */
+	glm::vec<2, GLfloat> DeltaCursor;
 };
