@@ -1,5 +1,6 @@
 #pragma once
 
+#include <GLFW/glfw3.h>
 #include <GL/glew.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -21,8 +22,8 @@ private:
 	//glm::vec<3, GLfloat> Rotation; /* Pitch = Y, Yaw = Z, Roll = X */
 
 	/* Unit Vector */
-	//glm::vec<3, GLfloat> CameraOrientation;
+	glm::mat<4, 4, GLfloat> CameraOrientation;
 
-	//void UpdateCameraOrientation();
+	void UpdateCameraOrientation(GLfloat DeltaTime, GLfloat xpos, GLfloat ypos);
 };
 
