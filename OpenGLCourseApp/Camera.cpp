@@ -1,11 +1,12 @@
-#include "Camera.h"
 #include <iostream>
+
+#include "Camera.h"
 
 Camera::Camera() {
 	//use normal glm::rotation on unit front vec
 	std::cout << "Constructing Camera" << std::endl;
 
-	CameraOrientation = glm::mat<4, 4, GLfloat>(1.f);
+	Cameraorientation = glm::mat<4, 4, GLfloat>(1.f);
 }
 Camera::~Camera() {
 	std::cout << "Destroying Camera" << std::endl;
@@ -13,7 +14,7 @@ Camera::~Camera() {
 
 void Camera::UpdateCameraOrientation(GLfloat DeltaTime, GLfloat xpos, GLfloat ypos) {
 	glm::vec<3, GLfloat> MouseInput = glm::vec<3, GLfloat>(xpos, ypos, 1.f);
-	CameraOrientation = glm::rotate(CameraOrientation, glm::radians<GLfloat>(DeltaTime), MouseInput);
+	Cameraorientation = glm::rotate(Cameraorientation, glm::radians<GLfloat>(DeltaTime), MouseInput);
 
-	std::cout << CameraOrientation[0][0] << std::endl;
+	std::cout << Cameraorientation[0][0] << std::endl;
 }
