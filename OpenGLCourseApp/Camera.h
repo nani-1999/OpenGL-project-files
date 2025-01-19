@@ -9,6 +9,7 @@ public:
 	Camera();
 	~Camera();
 
+	void UpdateCameraOrientation(GLfloat DeltaTime, GLfloat DeltaX, GLfloat DeltaY);
 private:
 	///* Unit Vectors */
 	//glm::vec<3, GLfloat> Forward;
@@ -21,8 +22,7 @@ private:
 	//glm::vec<3, GLfloat> Rotation; /* Pitch = Y, Yaw = Z, Roll = X */
 
 	/* Unit Vector */
-	glm::mat<4, 4, GLfloat> Cameraorientation;
+	glm::mat<4, 4, GLfloat> CameraOrientation;
 
-	void UpdateCameraOrientation(GLfloat DeltaTime, GLfloat xpos, GLfloat ypos);
 };
 

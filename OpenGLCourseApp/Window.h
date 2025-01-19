@@ -11,12 +11,13 @@
 
 /* Window Indexes */
 static std::vector<GLFWwindow*> WindowIndices;
-/* Key Events Respectively */
+/* Key Event */
 static std::vector<std::vector<bool>> KeyEvents;
-/* Mouse Inputs Respectively */
-static std::vector<glm::vec<2, GLfloat>> MouseInput;
+/* Mouse Cursor Position */
+static std::vector<glm::vec<2, GLfloat>> PreviousCursorPos;
+static std::vector<glm::vec<2, GLfloat>> CurrentCursorPos;
 /* Delta Mouse Input */
-static std::vector<glm::vec<2, GLfloat>> MouseDeltaInput;
+static std::vector<glm::vec<2, GLfloat>> DeltaCursorPos;
 
 class Window {
 public:
@@ -39,7 +40,12 @@ public:
 	/* Returns KeyEvents of GLFWwindow */
 	const std::vector<bool>& GetKeyEvents() const;
 	/* Returns MouseInputs of GLFWwindow */
-	const glm::vec<2, GLfloat>& GetMouseInput() const;
+	const glm::vec<2, GLfloat>& GetCursorPos() const;
+	/* Returns DeltaMouseInputs of GLFWindow */
+	const glm::vec<2, GLfloat>& GetDeltaCursorPos() const;
+
+	/* Window Tick */
+	void Tick(GLfloat DeltaTime);
 
 private:
 	/* Window */
@@ -54,6 +60,4 @@ private:
 	/* Callbacks */
 	static void InputEvent_Callback(GLFWwindow* window, int key, int scancode, int action, int mods); /* must be static */
 	static void CursorPos_Callback(GLFWwindow* window, double xpos, double ypos);
-	/* Mouse Delta */
-	glm::vec<2, GLfloat> DeltaCursor;
 };

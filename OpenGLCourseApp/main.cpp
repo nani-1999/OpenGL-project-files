@@ -18,6 +18,7 @@
 #include "Mesh.h"
 #include "Shader.h"
 #include "Window.h"
+#include "Camera.h"
 
 #include <iomanip>
 
@@ -131,9 +132,12 @@ int main()
 	UniformProjection = Shaders.at(0)->GetShaderUniformLocation("Projection");
 	UniformModel = Shaders.at(0)->GetShaderUniformLocation("Model");
 
-	/* Shader Projection */
-	glm::mat4 Projection = glm::perspective(45.f, (GLfloat)BufferSize.x / BufferSize.y, 0.1f, 100.f);
+	/* Projection Matrix */
+	/* calculate prespective view of the buffer size */
+	glm::mat<4, 4, GLfloat> Projection = glm::perspective(45.f, (GLfloat)BufferSize.x / BufferSize.y, 0.1f, 100.f);
 
+	/* Camera Matrix */
+	Camera* camera = new Camera();
 
 	GLboolean bCloseWindow = false;
 	/* loop until glfw window close button is pressed */
@@ -141,6 +145,11 @@ int main()
 	while (!bCloseWindow/*!glfwWindowShouldClose(mainWindow->GetWindow())*/) {
 		/* getting use input events, can handle any input events on window */
 		glfwPollEvents();
+		mainWindow->Tick(1.f);
+		
+		/* Window */
+		glm::vec<2, GLfloat> DeltaMouse = mainWindow->GetDeltaCursorPos();
+		std::cout << "DeltaX: " << DeltaMouse.x << " DeltaY: " << DeltaMouse.y << std::endl;
 
 		/* Updating Interp Values */
 		/* moving using shader variable, @TODO can add UE interp code */
@@ -187,8 +196,6 @@ int main()
 		glUniformMatrix4fv(UniformModel, 1, GL_FALSE, glm::value_ptr(model));
 		Meshes.at(1)->RenderMesh();
 
-
-
 		/* Shader */
 		/* unuses Shader Progrom, since it is the only Shader that is beging used in the previous statements */
 		glUseProgram(0); /* unuse shader for the next statement code, maybe we use different shader in the next statements */
@@ -197,6 +204,8 @@ int main()
 		if (mainWindow->GetKeyEvents().at(GLFW_KEY_ESCAPE)) bCloseWindow = true;
 
 		glfwSwapBuffers(mainWindow->GetWindow());
+
+		//system("CLS");
 	}
 
 	mainWindow->ClearWindow();

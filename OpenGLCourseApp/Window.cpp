@@ -32,6 +32,21 @@ Window::~Window() {
 	ClearWindow();
 }
 
+void Window::Tick(GLfloat DeltaTime) {
+	/* Delta Cursor Pos */
+	GLuint WindowIndex = GetWindowIndex((window));
+
+	glm::vec<2, GLfloat>& PreviousPos = PreviousCursorPos.at(WindowIndex);
+	glm::vec<2, GLfloat>& CurrentPos = CurrentCursorPos.at(WindowIndex);
+
+	glm::vec<2, GLfloat>& DeltaPos = DeltaCursorPos.at(WindowIndex);
+	DeltaPos.x = CurrentPos.x - PreviousPos.x;
+	DeltaPos.y = CurrentPos.y - PreviousPos.y;
+
+	PreviousPos.x = CurrentPos.x;
+	PreviousPos.y = CurrentPos.y;
+}
+
 void Window::MakeCurrent() {
 	/* setting context for GLEW to use */
 	/* setting up window for GLEW to use, incase if we have muliple GLFWwindow's */
@@ -63,54 +78,55 @@ GLuint Window::GetWindowIndex(GLFWwindow* WindowToFind) {
 	std::cerr << "Unable to find GLFWwindow Index!" << std::endl;
 	return -1;
 }
-
+// rename to cursor pos
 void Window::InitInput() {
-	/* Initializing Key Events */
+	/* Creating Keys */
 	std::vector<bool> WindowKeyEvents;
 	for (size_t i = 0; i < 1024; i++) {
 		WindowKeyEvents.push_back(false);
 	}
-	/* Initializing Mouse Inputs */
-	glm::vec<2, GLfloat> MouseAxis(0.f); /* this shit is not 0 by default at declaration stage, so initialize it to zero */
-	/* Initializing Mouse Delta Inputs */
-	glm::vec<2, GLfloat> MouseDelta(0.f);
+	/* Creating Previous CursorPos */
+	glm::vec<2, GLfloat> PreviousPos(0.f);
+	/* Creating Current CursorPos */
+	glm::vec<2, GLfloat> CurrentPos(0.f); /* this shit is not 0 by default at declaration stage, so initialize it to zero */
+	/* Creating Delta CursorPos */
+	glm::vec<2, GLfloat> DeltaPos(0.f);
 
 	/* Pushing */
 	WindowIndices.push_back(window);
 	KeyEvents.push_back(WindowKeyEvents);
-	MouseInput.push_back(MouseAxis);
-	MouseDeltaInput.push_back(MouseDelta);
+	PreviousCursorPos.push_back(PreviousPos);
+	CurrentCursorPos.push_back(CurrentPos);
+	DeltaCursorPos.push_back(DeltaPos);
 
-	/* @LOG */
-	std::cout << "WindowIndices: " << WindowIndices.size() << " KeyEvents: " << KeyEvents.size() << " MouseInput: " << KeyEvents.size() << " MouseDeltaInput: " << MouseDeltaInput.size() << std::endl;
-
-	// Binding Callbacks
+	/* Binding Callbacks */
 	glfwSetKeyCallback(window, Window::InputEvent_Callback);
 	glfwSetCursorPosCallback(window, Window::CursorPos_Callback);
 }
 void Window::ClearInput() { /* efficiently removes all elements with matching window index */
 	/* Getting the Index of GLFWwindow */
 	GLuint WindowIndex = GetWindowIndex(window);
-	if (WindowIndex < 0) {
-		std::cerr << "No Window to Clear its Input" << std::endl;
-		return;
-	}
 
-	// Erasing GLFWwindow
+	/*  Erasing GLFWwindow*/
+	WindowIndices.at(WindowIndex) = nullptr; /* nulling before erasing */
 	WindowIndices.erase(WindowIndices.begin() + WindowIndex);
 	
-	// Erasing KeyEvents
+	/* Erasing KeyEvents */
 	std::vector<bool>& WindowKeyEvents = KeyEvents.at(WindowIndex);
-	for (size_t i = 0; i < WindowKeyEvents.size(); i++) {
+	for (size_t i = 0; i < WindowKeyEvents.size(); i++) { /* falsing out before erasing */
 		WindowKeyEvents.at(i) = false;
 	}
-	WindowKeyEvents.clear();
+	WindowKeyEvents.clear(); 
 	KeyEvents.erase(KeyEvents.begin() + WindowIndex);
 
-	// Erasing MouseInput
-	glm::vec<2, GLfloat>& WindowMouseInput = MouseInput.at(WindowIndex);
-	WindowMouseInput = glm::vec<2, GLfloat>(0.f);
-	MouseInput.erase(MouseInput.begin() + WindowIndex);
+	/* Erasing Previous Cursor Pos */
+	glm::vec<2, GLfloat>& PreviousPos = PreviousCursorPos.at(WindowIndex);
+	PreviousPos = glm::vec<2, GLfloat>(0.f); /* zeroing out before erasing */
+	PreviousCursorPos.erase(PreviousCursorPos.begin() + WindowIndex);
+	/* Erasing Current Cursor Pos */
+	glm::vec<2, GLfloat>& CurrentPos = CurrentCursorPos.at(WindowIndex);
+	CurrentPos = glm::vec<2, GLfloat>(0.f); /* zeroing out before erasing */
+	CurrentCursorPos.erase(CurrentCursorPos.begin() + WindowIndex);
 }
 
 void Window::InputEvent_Callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
@@ -123,18 +139,19 @@ const std::vector<bool>& Window::GetKeyEvents() const {
 }
 
 void Window::CursorPos_Callback(GLFWwindow* window, double xpos, double ypos) {
-	/* Previous Mouse Input */
-	glm::vec<2, GLfloat>& WindowMouseInput = MouseInput.at(GetWindowIndex(window));
+	glm::vec<2, GLfloat>& CurrentPos = CurrentCursorPos.at(GetWindowIndex(window));
 
-	/* Delta Mouse Input */
-	glm::vec<2, GLfloat>& MouseDelta = MouseDeltaInput.at(GetWindowIndex(window));
+	//glm::vec<2, GLfloat>& PreviousPos = PreviousCursorPos.at(GetWindowIndex(window));
 
-	MouseDelta.x = WindowMouseInput.x ? WindowMouseInput.x - xpos : 0.f;
-	MouseDelta.y = WindowMouseInput.y ? WindowMouseInput.y - ypos : 0.f;
+	//PreviousPos.x = CurrentPos.x;
+	//PreviousPos.y = CurrentPos.y;
 
-	WindowMouseInput.x = (float)xpos;
-	WindowMouseInput.y = (float)ypos;
+	CurrentPos.x = (float)xpos;
+	CurrentPos.y = (float)ypos;
 }
-const glm::vec<2, GLfloat>& Window::GetMouseInput() const {
-	return MouseInput.at(GetWindowIndex(window));
+const glm::vec<2, GLfloat>& Window::GetCursorPos() const {
+	return CurrentCursorPos.at(GetWindowIndex(window));
+}
+const glm::vec<2, GLfloat>& Window::GetDeltaCursorPos() const {
+	return DeltaCursorPos.at(GetWindowIndex(window));
 }
