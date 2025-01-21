@@ -162,7 +162,7 @@ namespace glm
 	/// @see - frustum(T const& left, T const& right, T const& bottom, T const& top, T const& nearVal, T const& farVal) frustum(T const& left, T const& right, T const& bottom, T const& top, T const& nearVal, T const& farVal)
 	/// @see <a href="https://www.khronos.org/registry/OpenGL-Refpages/gl2.1/xhtml/gluLookAt.xml">gluLookAt man page</a>
 	template<typename T, qualifier Q>
-	GLM_FUNC_DECL mat<4, 4, T, Q> lookAt(
+	GLM_FUNC_DECL mat<4, 4, T, Q> tlookAt(
 		vec<3, T, Q> const& eye, vec<3, T, Q> const& center, vec<3, T, Q> const& up);
 
 	/// @}

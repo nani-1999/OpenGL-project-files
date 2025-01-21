@@ -20,7 +20,9 @@
 #include "Window.h"
 #include "Camera.h"
 
+/* @DEBUG */
 #include <iomanip>
+#include "Nani/NaniDebug.h"
 
 /* Window Dimensions */
 const GLint WIDTH = 720, HEIGHT = 480;
@@ -90,7 +92,9 @@ void CreateTriangle() {
 
 int main()
 {
+	/* @DEBUG */
 	std::cout << std::fixed << std::setprecision(3);
+
 	/* GLFW */
 	if (!glfwInit()) { /* GLFW Initialization */
 		std::cout << "GLFW initialization falied!" << std::endl;
@@ -128,13 +132,15 @@ int main()
 	/* Shader */
 	CompileShaders();
 	/* Getting Shader[0] Variable ID's */
-	GLuint UniformProjection, UniformModel = 0;
+	GLuint UniformProjection, UniformModel, UniformView = 0;
 	UniformProjection = Shaders.at(0)->GetShaderUniformLocation("Projection");
 	UniformModel = Shaders.at(0)->GetShaderUniformLocation("Model");
+	UniformView = Shaders.at(0)->GetShaderUniformLocation("View");
 
 	/* Projection Matrix */
 	/* calculate prespective view of the buffer size */
 	glm::mat<4, 4, GLfloat> Projection = glm::perspective(45.f, (GLfloat)BufferSize.x / BufferSize.y, 0.1f, 100.f);
+	PrintMat4(Projection);
 
 	/* Camera Matrix */
 	Camera* camera = new Camera();
@@ -147,9 +153,6 @@ int main()
 		glfwPollEvents();
 		mainWindow->Tick(1.f);
 		
-		/* Window */
-		glm::vec<2, GLfloat> DeltaMouse = mainWindow->GetDeltaCursorPos();
-		std::cout << "DeltaX: " << DeltaMouse.x << " DeltaY: " << DeltaMouse.y << std::endl;
 
 		/* Updating Interp Values */
 		/* moving using shader variable, @TODO can add UE interp code */
@@ -170,31 +173,43 @@ int main()
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); /* clearing only color data of the pixel, since each pixel has a lot of data like stencel, depth, color, etc */
 
 		/* Shader */
+		/* using Shaders[0] */
 		Shaders.at(0)->UseShader();
-
-		/* Projection Matrix */
-		glUniformMatrix4fv(UniformProjection, 1, GL_FALSE, glm::value_ptr(Projection)); /* perspective starts at origin, so if there is any object in origin will look zoomed in */
 
 		/* Shader Model 1 */
 		glm::mat<4, 4, GLfloat> model(1.f);
 		/* Translate */
-		model = glm::translate(model, glm::vec<3, GLfloat>(0.6f, MoveOffset * 0.5f, -2.f));
+		//model = glm::translate(model, glm::vec<3, GLfloat>(0.6f, 0.f, -2.f));
 		/* Scale */
-		model = glm::scale(model, glm::vec<3, GLfloat>(0.3f, 0.3f, 0.3f));
+		//model = glm::scale(model, glm::vec<3, GLfloat>(0.3f, 0.3f, 0.3f));
 		/* Rotate */
-		model = glm::rotate(model, glm::radians<GLfloat>(RotateInterp), glm::vec<3, GLfloat>(0.2f, 1.f, 0.5f));
+		//model = glm::rotate(model, glm::radians<GLfloat>(RotateInterp), glm::vec<3, GLfloat>(0.2f, 1.f, 0.5f));
 		/* Model Matrix */
-		glUniformMatrix4fv(UniformModel, 1, GL_FALSE, glm::value_ptr(model));
+		//glUniformMatrix4fv(UniformModel, 1, GL_FALSE, glm::value_ptr(model));
 		/* Rendering Mesh */
-		Meshes.at(0)->RenderMesh();
+		//Meshes.at(0)->RenderMesh();
+
+		GLfloat Sine = glm::sin(glfwGetTime());
 
 		/* Shader Model 2 */
 		model = glm::mat<4, 4, GLfloat>(1.f); /* We need to reset the model value and apply new values, since it has previous transformation values */
-		model = glm::translate(model, glm::vec<3, GLfloat>(-0.6f, - MoveOffset * 0.5f , -2.f));
+		model = glm::translate(model, glm::vec<3, GLfloat>(1.f, 0.f , -5.f));
 		model = glm::scale(model, glm::vec<3, GLfloat>(0.3f, 0.3f, 0.3f));
-		model = glm::rotate(model, glm::radians<GLfloat>(RotateInterp), glm::vec<3, GLfloat>(0.2f, 1.f, 0.5f)); /* One Radian = PI/180 */
+		//model = glm::rotate(model, glm::radians<GLfloat>(45.f * Sine), glm::vec<3, GLfloat>(0.f, 0.f, 1.f)); /* One Radian = PI/180 */
 		glUniformMatrix4fv(UniformModel, 1, GL_FALSE, glm::value_ptr(model));
 		Meshes.at(1)->RenderMesh();
+
+		/* View Matrix */
+		/* Doing before Projection */
+		std::vector<bool> KeyEvents = mainWindow->GetKeyEvents();
+		camera->UpdateCameraOrientation(KeyEvents.at(GLFW_KEY_W), KeyEvents.at(GLFW_KEY_S), KeyEvents.at(GLFW_KEY_D), KeyEvents.at(GLFW_KEY_A), KeyEvents.at(GLFW_KEY_E), KeyEvents.at(GLFW_KEY_Q));
+		glm::mat<4, 4, GLfloat> CameraOrientation = camera->GetCameraMatrix();//glm::mat<4, 4, GLfloat>(1.f);
+		glUniformMatrix4fv(UniformView, 1, GL_FALSE, glm::value_ptr(CameraOrientation));
+		
+
+		/* Projection Matrix */
+		/* Doing Projection on last */
+		glUniformMatrix4fv(UniformProjection, 1, GL_FALSE, glm::value_ptr(Projection)); /* perspective starts at origin, so if there is any object in origin will look zoomed in */
 
 		/* Shader */
 		/* unuses Shader Progrom, since it is the only Shader that is beging used in the previous statements */
@@ -204,8 +219,6 @@ int main()
 		if (mainWindow->GetKeyEvents().at(GLFW_KEY_ESCAPE)) bCloseWindow = true;
 
 		glfwSwapBuffers(mainWindow->GetWindow());
-
-		//system("CLS");
 	}
 
 	mainWindow->ClearWindow();

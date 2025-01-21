@@ -4,12 +4,16 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
+#include <GLFW/glfw3.h>
+
 class Camera {
 public:
 	Camera();
 	~Camera();
 
-	void UpdateCameraOrientation(GLfloat DeltaTime, GLfloat DeltaX, GLfloat DeltaY);
+	void UpdateCameraOrientation(bool WKey, bool SKey, bool DKey, bool AKey, bool EKey, bool QKey);
+
+	glm::mat<4, 4, GLfloat> GetCameraMatrix() const { return CameraMatrix; }
 private:
 	///* Unit Vectors */
 	//glm::vec<3, GLfloat> Forward;
@@ -22,7 +26,9 @@ private:
 	//glm::vec<3, GLfloat> Rotation; /* Pitch = Y, Yaw = Z, Roll = X */
 
 	/* Unit Vector */
-	glm::mat<4, 4, GLfloat> CameraOrientation;
+	glm::mat<4, 4, GLfloat> CameraMatrix;
 
+	/* Camera Transform */
+	glm::vec<3, GLfloat> Location, Rotation;
 };
 

@@ -16,7 +16,7 @@ static std::vector<std::vector<bool>> KeyEvents;
 /* Mouse Cursor Position */
 static std::vector<glm::vec<2, GLfloat>> PreviousCursorPos;
 static std::vector<glm::vec<2, GLfloat>> CurrentCursorPos;
-/* Delta Mouse Input */
+/* Delta Curosr Position */
 static std::vector<glm::vec<2, GLfloat>> DeltaCursorPos;
 
 class Window {

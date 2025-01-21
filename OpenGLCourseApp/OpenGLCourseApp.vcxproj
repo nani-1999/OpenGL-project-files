@@ -177,6 +177,8 @@
   <ItemGroup>
     <ClInclude Include="Camera.h" />
     <ClInclude Include="Mesh.h" />
+    <ClInclude Include="Nani\NaniDebug.h" />
+    <ClInclude Include="Nani\NaniMath.h" />
     <ClInclude Include="Nani\NaniTypes.h" />
     <ClInclude Include="Shader.h" />
     <ClInclude Include="Window.h" />

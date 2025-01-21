@@ -140,12 +140,6 @@ const std::vector<bool>& Window::GetKeyEvents() const {
 
 void Window::CursorPos_Callback(GLFWwindow* window, double xpos, double ypos) {
 	glm::vec<2, GLfloat>& CurrentPos = CurrentCursorPos.at(GetWindowIndex(window));
-
-	//glm::vec<2, GLfloat>& PreviousPos = PreviousCursorPos.at(GetWindowIndex(window));
-
-	//PreviousPos.x = CurrentPos.x;
-	//PreviousPos.y = CurrentPos.y;
-
 	CurrentPos.x = (float)xpos;
 	CurrentPos.y = (float)ypos;
 }
