@@ -6,6 +6,8 @@
 
 #include <GLFW/glfw3.h>
 
+static const glm::vec<3, GLfloat> WorldUpVector(0.f, 1.f, 0.f);
+
 class Camera {
 public:
 	Camera();
@@ -13,7 +15,7 @@ public:
 
 	void UpdateCameraOrientation(bool WKey, bool SKey, bool DKey, bool AKey, bool EKey, bool QKey);
 
-	glm::mat<4, 4, GLfloat> GetCameraMatrix() const { return CameraMatrix; }
+	glm::mat<4, 4, GLfloat> GetCameraMatrix();
 private:
 	///* Unit Vectors */
 	//glm::vec<3, GLfloat> Forward;
@@ -24,9 +26,6 @@ private:
 	//glm::vec<3, GLfloat> Location;
 	///* Rotation */
 	//glm::vec<3, GLfloat> Rotation; /* Pitch = Y, Yaw = Z, Roll = X */
-
-	/* Unit Vector */
-	glm::mat<4, 4, GLfloat> CameraMatrix;
 
 	/* Camera Transform */
 	glm::vec<3, GLfloat> Location, Rotation;

@@ -95,6 +95,9 @@ int main()
 	/* @DEBUG */
 	std::cout << std::fixed << std::setprecision(3);
 
+	//Matest = glm::rotate(Matest, glm::radians(45.f), glm::vec<3, GLfloat>(1.f, 0.f, 0.f)); /* single time of axis always does global rotation, second time on same axis will result in gimbal lock problem */
+	//glm::vec<3, GLfloat> ResultVec = Matest / glm::vec4(FwdVec, 1.f); /* multiply for column values, divide for row values */
+
 	/* GLFW */
 	if (!glfwInit()) { /* GLFW Initialization */
 		std::cout << "GLFW initialization falied!" << std::endl;
@@ -140,7 +143,6 @@ int main()
 	/* Projection Matrix */
 	/* calculate prespective view of the buffer size */
 	glm::mat<4, 4, GLfloat> Projection = glm::perspective(45.f, (GLfloat)BufferSize.x / BufferSize.y, 0.1f, 100.f);
-	PrintMat4(Projection);
 
 	/* Camera Matrix */
 	Camera* camera = new Camera();
@@ -151,7 +153,7 @@ int main()
 	while (!bCloseWindow/*!glfwWindowShouldClose(mainWindow->GetWindow())*/) {
 		/* getting use input events, can handle any input events on window */
 		glfwPollEvents();
-		mainWindow->Tick(1.f);
+		mainWindow->Tick(1.f); /* ticking for calculating delta cursor position */
 		
 
 		/* Updating Interp Values */
@@ -193,9 +195,9 @@ int main()
 
 		/* Shader Model 2 */
 		model = glm::mat<4, 4, GLfloat>(1.f); /* We need to reset the model value and apply new values, since it has previous transformation values */
-		model = glm::translate(model, glm::vec<3, GLfloat>(1.f, 0.f , -5.f));
+		model = glm::translate(model, glm::vec<3, GLfloat>(0.f, 0.f , -5.f));
 		model = glm::scale(model, glm::vec<3, GLfloat>(0.3f, 0.3f, 0.3f));
-		//model = glm::rotate(model, glm::radians<GLfloat>(45.f * Sine), glm::vec<3, GLfloat>(0.f, 0.f, 1.f)); /* One Radian = PI/180 */
+		//model = glm::rotate(model, glm::radians<GLfloat>(45.f * Sine), glm::vec<3, GLfloat>(0.f, 0.f, 1.f)); /* rotation vec must be not zero vector, but angle can be zero. One Radian = PI/180 */
 		glUniformMatrix4fv(UniformModel, 1, GL_FALSE, glm::value_ptr(model));
 		Meshes.at(1)->RenderMesh();
 
@@ -203,7 +205,7 @@ int main()
 		/* Doing before Projection */
 		std::vector<bool> KeyEvents = mainWindow->GetKeyEvents();
 		camera->UpdateCameraOrientation(KeyEvents.at(GLFW_KEY_W), KeyEvents.at(GLFW_KEY_S), KeyEvents.at(GLFW_KEY_D), KeyEvents.at(GLFW_KEY_A), KeyEvents.at(GLFW_KEY_E), KeyEvents.at(GLFW_KEY_Q));
-		glm::mat<4, 4, GLfloat> CameraOrientation = camera->GetCameraMatrix();//glm::mat<4, 4, GLfloat>(1.f);
+		glm::mat<4, 4, GLfloat> CameraOrientation = glm::mat<4, 4, GLfloat>(1.f);
 		glUniformMatrix4fv(UniformView, 1, GL_FALSE, glm::value_ptr(CameraOrientation));
 		
 
