@@ -134,14 +134,18 @@ void Window::InputEvent_Callback(GLFWwindow* window, int key, int scancode, int 
 
 	KeyEvents.at(GetWindowIndex(window)).at(key) = action;
 }
-const std::vector<bool>& Window::GetKeyEvents() const { 
-	return KeyEvents.at(GetWindowIndex(window)); 
-}
-
 void Window::CursorPos_Callback(GLFWwindow* window, double xpos, double ypos) {
 	glm::vec<2, GLfloat>& CurrentPos = CurrentCursorPos.at(GetWindowIndex(window));
 	CurrentPos.x = (float)xpos;
 	CurrentPos.y = (float)ypos;
+}
+
+void Window::CalculateDeltaCursorPos() {
+	
+}
+
+const std::vector<bool>& Window::GetKeyEvents() const { 
+	return KeyEvents.at(GetWindowIndex(window)); 
 }
 const glm::vec<2, GLfloat>& Window::GetCursorPos() const {
 	return CurrentCursorPos.at(GetWindowIndex(window));

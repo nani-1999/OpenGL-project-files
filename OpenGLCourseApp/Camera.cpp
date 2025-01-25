@@ -18,7 +18,7 @@ Camera::~Camera() {
 	std::cout << "Destroying Camera" << std::endl;
 }
 
-void Camera::UpdateCameraOrientation(bool WKey, bool SKey, bool DKey, bool AKey, bool EKey, bool QKey) {
+void Camera::UpdateCameraLocation(bool WKey, bool SKey, bool DKey, bool AKey, bool EKey, bool QKey) {
 	glm::vec<3, GLfloat> ForwardVector(0.f);
 	ForwardVector.x = glm::cos(glm::radians<GLfloat>(Rotation.x)) * glm::sin(glm::radians<GLfloat>(Rotation.y));
 	ForwardVector.y = -glm::sin(glm::radians<GLfloat>(Rotation.x));
@@ -36,4 +36,10 @@ void Camera::UpdateCameraOrientation(bool WKey, bool SKey, bool DKey, bool AKey,
 	if (EKey || QKey) {
 		Location.y += (EKey) ? 1.f : (QKey) ? -1.f : 0.f;
 	}
+}
+void Camera::UpdateCameraRotation(glm::vec<2, GLfloat> DeltaCursorPos) {
+}
+
+glm::mat<4, 4, GLfloat> Camera::GetCameraMatrix() {
+	return glm::mat4(1.f);
 }

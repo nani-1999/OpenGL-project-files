@@ -54,7 +54,7 @@ void CompileShaders() {
 	Shaders.push_back(shader);
 }
 
-void CreateTriangle() {
+void CreateMesh() {
 
 	GLuint Indices[] = {
 		1, 2, 0,
@@ -90,6 +90,21 @@ void CreateTriangle() {
 	Meshes.push_back(mesh2);
 }
 
+class Aa {
+public:
+	float Val;
+	Aa(float Value) : Val{ Value } {}
+	~Aa() {}
+
+	void Print() { std::cout << "Aa | Val: " << Val << std::endl; }
+};
+class Bb {
+public:
+	Bb() {}
+	~Bb() {}
+	void Print() { std::cout << "Bb" << std::endl; }
+};
+
 int main()
 {
 	/* @DEBUG */
@@ -110,7 +125,24 @@ int main()
 	mainWindow->MakeCurrent();
 	/* Buffer Size */
 	glm::vec<2, GLint> BufferSize = mainWindow->GetWindowFrameBufferSize();
-	
+
+
+	/* Test */
+	//Aa* aa = new Aa(11.f);
+	//Aa* aaa = new Aa(111.f);
+	//GLFWwindow* XWindow = glfwCreateWindow(WIDTH, HEIGHT, "XWindow", nullptr, nullptr);
+	//glfwSetWindowUserPointer(XWindow, aa);
+	//GLFWwindow* YWindow = glfwCreateWindow(WIDTH, HEIGHT, "XWindow", nullptr, nullptr);
+	//glfwSetWindowUserPointer(YWindow, aaa);
+	//
+	//Aa* Xaa = static_cast<Aa*>(glfwGetWindowUserPointer(YWindow));
+	//if (Xaa) {
+	//	Xaa->Print();
+	//}
+	//else {
+	//	std::cout << "Unable to print" << std::endl;
+	//}
+
 	/* GLEW */
 	glewExperimental = GL_TRUE; /* allowing glew to use modern features */
 	if (glewInit() != GLEW_OK) { /* GLEW Initialization */
@@ -129,8 +161,8 @@ int main()
 	/* Printing out GL Version */
 	std::cout << glGetString(GL_VERSION/*GL_SHADING_LANGUAGE_VERSION*/) << std::endl;
 
-	/* Creating Triangle */
-	CreateTriangle();
+	/* Creating Meshes */
+	CreateMesh();
 
 	/* Shader */
 	CompileShaders();
@@ -155,7 +187,6 @@ int main()
 		glfwPollEvents();
 		mainWindow->Tick(1.f); /* ticking for calculating delta cursor position */
 		
-
 		/* Updating Interp Values */
 		/* moving using shader variable, @TODO can add UE interp code */
 		Direction = (MoveOffset >= 1.f || MoveOffset <= -1.f) ? !Direction : Direction;
@@ -204,7 +235,8 @@ int main()
 		/* View Matrix */
 		/* Doing before Projection */
 		std::vector<bool> KeyEvents = mainWindow->GetKeyEvents();
-		camera->UpdateCameraOrientation(KeyEvents.at(GLFW_KEY_W), KeyEvents.at(GLFW_KEY_S), KeyEvents.at(GLFW_KEY_D), KeyEvents.at(GLFW_KEY_A), KeyEvents.at(GLFW_KEY_E), KeyEvents.at(GLFW_KEY_Q));
+		camera->UpdateCameraLocation(KeyEvents.at(GLFW_KEY_W), KeyEvents.at(GLFW_KEY_S), KeyEvents.at(GLFW_KEY_D), KeyEvents.at(GLFW_KEY_A), KeyEvents.at(GLFW_KEY_E), KeyEvents.at(GLFW_KEY_Q));
+		camera->UpdateCameraRotation(mainWindow->GetDeltaCursorPos());
 		glm::mat<4, 4, GLfloat> CameraOrientation = glm::mat<4, 4, GLfloat>(1.f);
 		glUniformMatrix4fv(UniformView, 1, GL_FALSE, glm::value_ptr(CameraOrientation));
 		

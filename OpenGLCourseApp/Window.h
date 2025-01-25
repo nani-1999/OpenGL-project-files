@@ -60,4 +60,7 @@ private:
 	/* Callbacks */
 	static void InputEvent_Callback(GLFWwindow* window, int key, int scancode, int action, int mods); /* must be static */
 	static void CursorPos_Callback(GLFWwindow* window, double xpos, double ypos);
+
+	/* Delta */
+	void CalculateDeltaCursorPos();
 };
