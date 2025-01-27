@@ -1,19 +1,31 @@
 #pragma once
 
-#include <GL/glew.h>
 #include <glm/glm.hpp>
 
-/* All Unit Direction of Zero Rotation */
-static glm::vec<3, GLfloat>ForwardVec(0.f, 0.f, -1.f);
-static glm::vec<3, GLfloat>RightVec(1.f, 0.f, 0.f);
-static glm::vec<3, GLfloat>UpVec(0.f, 1.f, 0.f);
+#define N_PI 					(3.1415926535897932f)	/* Extra digits if needed: 3.1415926535897932384626433832795f */
+#define N_SMALL_NUMBER			(1.e-8f)
 
-static glm::vec<3, GLfloat> GetForwardVec(glm::vec<3, GLfloat> Rotation) {
+namespace Nani {
+	float NormalizeAngle(float Angle) {
+		if (Angle > 180.f) Angle -= 360.f;
+		if (Angle < -180.f) Angle += 360.f;
+		return Angle;
+	}
+	float RAInterpTo(float CurrentRotationAxis, float TargetRotationAxis, float DeltaTime, float InterpSpeed) {
+		if (InterpSpeed <= 0.f)
+		{
+			return TargetRotationAxis;
+		}
 
-}
-static glm::vec<3, GLfloat> GetRightVec(glm::vec<3, GLfloat> Rotation) {
+		const float DifferenceAngle = NormalizeAngle(TargetRotationAxis - CurrentRotationAxis); /* also determines direction */
 
-}
-static glm::vec<3, GLfloat> GetUpVec(glm::vec<3, GLfloat> Rotation) {
+		if (glm::sqrt(DifferenceAngle) < N_SMALL_NUMBER)
+		{
+			return TargetRotationAxis;
+		}
 
+		const float DeltaRotationAxis = DifferenceAngle * glm::clamp<float>(DeltaTime * InterpSpeed, 0.f, 1.f);
+
+		return NormalizeAngle(CurrentRotationAxis + DeltaRotationAxis); /* normalized here also */
+	}
 }

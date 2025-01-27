@@ -9,7 +9,7 @@
 #include <vector>
 
 #include <GL/glew.h>
-#include <GLFW/glfw3.h>
+#include <GLFW/glfw3.h> /* must include glfw after glew, i think */
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -24,8 +24,8 @@
 #include <iomanip>
 #include "Nani/NaniDebug.h"
 
-/* Window Dimensions */
-const GLint WIDTH = 720, HEIGHT = 480;
+/* Window */
+const GLint WIDTH = 720, HEIGHT = 480; /* Dimensions */
 
 /* Meshes */
 std::vector<Mesh*> Meshes;
@@ -36,6 +36,9 @@ std::vector<Shader*> Shaders;
 /* Interpolation */
 GLboolean Direction;
 GLfloat MoveOffset = 0.f, InterpSpeed = 0.01f, RotateInterp = 0.f;
+
+/* Delta Time */
+GLfloat Time, DeltaTime = 0.f;
 
 void CompileShaders() {
 	/* Creating a Shader Program */
@@ -90,21 +93,6 @@ void CreateMesh() {
 	Meshes.push_back(mesh2);
 }
 
-class Aa {
-public:
-	float Val;
-	Aa(float Value) : Val{ Value } {}
-	~Aa() {}
-
-	void Print() { std::cout << "Aa | Val: " << Val << std::endl; }
-};
-class Bb {
-public:
-	Bb() {}
-	~Bb() {}
-	void Print() { std::cout << "Bb" << std::endl; }
-};
-
 int main()
 {
 	/* @DEBUG */
@@ -125,23 +113,6 @@ int main()
 	mainWindow->MakeCurrent();
 	/* Buffer Size */
 	glm::vec<2, GLint> BufferSize = mainWindow->GetWindowFrameBufferSize();
-
-
-	/* Test */
-	//Aa* aa = new Aa(11.f);
-	//Aa* aaa = new Aa(111.f);
-	//GLFWwindow* XWindow = glfwCreateWindow(WIDTH, HEIGHT, "XWindow", nullptr, nullptr);
-	//glfwSetWindowUserPointer(XWindow, aa);
-	//GLFWwindow* YWindow = glfwCreateWindow(WIDTH, HEIGHT, "XWindow", nullptr, nullptr);
-	//glfwSetWindowUserPointer(YWindow, aaa);
-	//
-	//Aa* Xaa = static_cast<Aa*>(glfwGetWindowUserPointer(YWindow));
-	//if (Xaa) {
-	//	Xaa->Print();
-	//}
-	//else {
-	//	std::cout << "Unable to print" << std::endl;
-	//}
 
 	/* GLEW */
 	glewExperimental = GL_TRUE; /* allowing glew to use modern features */
@@ -183,19 +154,22 @@ int main()
 	/* loop until glfw window close button is pressed */
 	/* when we press the close buttion of a window, it sets glfwWindowShouldClose(thatwindow, GLFW_TRUE); */
 	while (!bCloseWindow/*!glfwWindowShouldClose(mainWindow->GetWindow())*/) {
-		/* getting use input events, can handle any input events on window */
+		/* Time & DeltaTime */
+		GLfloat CurrentTime = glfwGetTime();
+		DeltaTime = CurrentTime - Time; /* before setting current time */
+		Time = CurrentTime;
+
+		/* Polling */
+		/* getting user input events, can handle any input events on window */
 		glfwPollEvents();
-		mainWindow->Tick(1.f); /* ticking for calculating delta cursor position */
-		
+
+		/* Window Tick */
+		mainWindow->Tick(DeltaTime); /* ticking for calculating delta cursor position */
+
 		/* Updating Interp Values */
 		/* moving using shader variable, @TODO can add UE interp code */
-		Direction = (MoveOffset >= 1.f || MoveOffset <= -1.f) ? !Direction : Direction;
-		if (Direction) {
-			MoveOffset += InterpSpeed * 0.01f;
-		}
-		else {
-			MoveOffset -= InterpSpeed * 0.01f;
-		}
+		//Direction = (MoveOffset >= 1.f || MoveOffset <= -1.f) ? !Direction : Direction;
+		MoveOffset += InterpSpeed * 0.01f * ((MoveOffset >= 1.f || MoveOffset <= -1.f) ? 1.f :-1.f);
 		//glUniform1f(XMoveId, MoveXOffset); /* moving using shader */
 		/* Rotating Triangle */
 		RotateInterp = (RotateInterp >= 360.f) ? 0.f : RotateInterp + InterpSpeed;
@@ -212,21 +186,19 @@ int main()
 		/* Shader Model 1 */
 		glm::mat<4, 4, GLfloat> model(1.f);
 		/* Translate */
-		//model = glm::translate(model, glm::vec<3, GLfloat>(0.6f, 0.f, -2.f));
+		model = glm::translate(model, glm::vec<3, GLfloat>(0.f, 2.f, 0.f));
 		/* Scale */
-		//model = glm::scale(model, glm::vec<3, GLfloat>(0.3f, 0.3f, 0.3f));
+		model = glm::scale(model, glm::vec<3, GLfloat>(0.3f, 0.3f, 0.3f));
 		/* Rotate */
 		//model = glm::rotate(model, glm::radians<GLfloat>(RotateInterp), glm::vec<3, GLfloat>(0.2f, 1.f, 0.5f));
 		/* Model Matrix */
-		//glUniformMatrix4fv(UniformModel, 1, GL_FALSE, glm::value_ptr(model));
+		glUniformMatrix4fv(UniformModel, 1, GL_FALSE, glm::value_ptr(model));
 		/* Rendering Mesh */
-		//Meshes.at(0)->RenderMesh();
-
-		GLfloat Sine = glm::sin(glfwGetTime());
+		Meshes.at(0)->RenderMesh();
 
 		/* Shader Model 2 */
 		model = glm::mat<4, 4, GLfloat>(1.f); /* We need to reset the model value and apply new values, since it has previous transformation values */
-		model = glm::translate(model, glm::vec<3, GLfloat>(0.f, 0.f , -5.f));
+		model = glm::translate(model, glm::vec<3, GLfloat>(0.f, 0.f , 0.f));
 		model = glm::scale(model, glm::vec<3, GLfloat>(0.3f, 0.3f, 0.3f));
 		//model = glm::rotate(model, glm::radians<GLfloat>(45.f * Sine), glm::vec<3, GLfloat>(0.f, 0.f, 1.f)); /* rotation vec must be not zero vector, but angle can be zero. One Radian = PI/180 */
 		glUniformMatrix4fv(UniformModel, 1, GL_FALSE, glm::value_ptr(model));
@@ -234,13 +206,11 @@ int main()
 
 		/* View Matrix */
 		/* Doing before Projection */
-		std::vector<bool> KeyEvents = mainWindow->GetKeyEvents();
-		camera->UpdateCameraLocation(KeyEvents.at(GLFW_KEY_W), KeyEvents.at(GLFW_KEY_S), KeyEvents.at(GLFW_KEY_D), KeyEvents.at(GLFW_KEY_A), KeyEvents.at(GLFW_KEY_E), KeyEvents.at(GLFW_KEY_Q));
-		camera->UpdateCameraRotation(mainWindow->GetDeltaCursorPos());
-		glm::mat<4, 4, GLfloat> CameraOrientation = glm::mat<4, 4, GLfloat>(1.f);
-		glUniformMatrix4fv(UniformView, 1, GL_FALSE, glm::value_ptr(CameraOrientation));
+		camera->UpdateCameraLocation(DeltaTime, mainWindow->GetKeyEvents()); /* updating camera location based on key events */
+		camera->UpdateCameraRotation(mainWindow->GetDeltaCursorPos()); /* updating camera rotation based on mouse input */
+		glm::mat<4, 4, GLfloat> CameraOrientation = camera->GetCameraMatrix(); /* getting camera orientation as matrix */
+		glUniformMatrix4fv(UniformView, 1, GL_FALSE, glm::value_ptr(CameraOrientation)); /* using camera matrix as view matrix */
 		
-
 		/* Projection Matrix */
 		/* Doing Projection on last */
 		glUniformMatrix4fv(UniformProjection, 1, GL_FALSE, glm::value_ptr(Projection)); /* perspective starts at origin, so if there is any object in origin will look zoomed in */
@@ -259,3 +229,4 @@ int main()
 	glfwTerminate();
 	return 0;
 }
+/* refactoring to unreal on revision */

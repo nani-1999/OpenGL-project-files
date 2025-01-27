@@ -3,21 +3,8 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
-#include "glm/glm.hpp"
 
 #include <vector>
-
-#include "Nani/NaniTypes.h"
-
-/* Window Indexes */
-static std::vector<GLFWwindow*> WindowIndices;
-/* Key Event */
-static std::vector<std::vector<bool>> KeyEvents;
-/* Mouse Cursor Position */
-static std::vector<glm::vec<2, GLfloat>> PreviousCursorPos;
-static std::vector<glm::vec<2, GLfloat>> CurrentCursorPos;
-/* Delta Curosr Position */
-static std::vector<glm::vec<2, GLfloat>> DeltaCursorPos;
 
 class Window {
 public:
@@ -54,7 +41,12 @@ private:
 	const GLchar* WindowTitle;
 
 	/* Input */
-	static GLuint GetWindowIndex(GLFWwindow* WindowToFind);
+	std::vector<bool> KeyEvents;
+	glm::vec<2, GLfloat> CurrentCursorPos;
+	glm::vec<2, GLfloat> PreviousCursorPos;
+	glm::vec<2, GLfloat> DeltaCursorPos;
+
+	/* Input */
 	void InitInput(); /* Initializing Window Input */
 	void ClearInput(); /* to remove window input */
 	/* Callbacks */

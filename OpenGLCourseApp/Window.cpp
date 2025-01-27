@@ -1,10 +1,7 @@
 #include <iostream>
 #include "Window.h"
 
-Window::Window(GLint Width, GLint Height, const GLchar* Title, GLFWwindow* SharedWindow) :
-	WindowSize{ glm::vec<2, GLint>(Width, Height) },
-	WindowTitle{ Title }
-{
+Window::Window(GLint Width, GLint Height, const GLchar* Title, GLFWwindow* SharedWindow) {
 	/* @LOG */
 	std::cout << "Constructing Window: " << Title << " " << Width << " x " << Height << std::endl;
 
@@ -16,6 +13,9 @@ Window::Window(GLint Width, GLint Height, const GLchar* Title, GLFWwindow* Share
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); /* core profile = no backwards compatibility, means no depricated code should run or else throw error */
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); /* forward compact, means upto date code */
 
+	WindowSize = glm::vec<2, GLint>(Width, Height);
+	WindowTitle = Title;
+
 	window = glfwCreateWindow(Width, Height, Title, nullptr, SharedWindow);
 	if (!window) {
 		std::cerr << "Failed to Create Window!" << std::endl;
@@ -23,7 +23,10 @@ Window::Window(GLint Width, GLint Height, const GLchar* Title, GLFWwindow* Share
 		return;
 	}
 
-	/* Adding Window to Input */
+	/* setting this Window as GLFWwindow user pointer, so we can access it later */
+	glfwSetWindowUserPointer(window, this);
+
+	/* Input */
 	InitInput();
 }
 Window::~Window() {
@@ -31,20 +34,24 @@ Window::~Window() {
 
 	ClearWindow();
 }
+void Window::InitInput() {
+	/* making space of keys */
+	for (size_t i = 0; i < 1024; i++) {
+		KeyEvents.push_back(false);
+	}
+	/* emptying Cursor Positions */
+	CurrentCursorPos, PreviousCursorPos, DeltaCursorPos = glm::vec<2, GLfloat>(0.f);
+
+	/*  */
+	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
+	/* Binding Callbacks */
+	glfwSetKeyCallback(window, Window::InputEvent_Callback);
+	glfwSetCursorPosCallback(window, Window::CursorPos_Callback);
+}
 
 void Window::Tick(GLfloat DeltaTime) {
-	/* Delta Cursor Pos */
-	GLuint WindowIndex = GetWindowIndex((window));
-
-	glm::vec<2, GLfloat>& PreviousPos = PreviousCursorPos.at(WindowIndex);
-	glm::vec<2, GLfloat>& CurrentPos = CurrentCursorPos.at(WindowIndex);
-
-	glm::vec<2, GLfloat>& DeltaPos = DeltaCursorPos.at(WindowIndex);
-	DeltaPos.x = CurrentPos.x - PreviousPos.x;
-	DeltaPos.y = CurrentPos.y - PreviousPos.y;
-
-	PreviousPos.x = CurrentPos.x;
-	PreviousPos.y = CurrentPos.y;
+	CalculateDeltaCursorPos();
 }
 
 void Window::MakeCurrent() {
@@ -69,87 +76,43 @@ void Window::ClearWindow() {
 	window = nullptr;
 }
 
-GLuint Window::GetWindowIndex(GLFWwindow* WindowToFind) {
-	for (size_t i = 0; i < WindowIndices.size(); i++) {
-		if (WindowIndices.at(i) == WindowToFind) {
-			return i;
-		}
-	}
-	std::cerr << "Unable to find GLFWwindow Index!" << std::endl;
-	return -1;
-}
-// rename to cursor pos
-void Window::InitInput() {
-	/* Creating Keys */
-	std::vector<bool> WindowKeyEvents;
-	for (size_t i = 0; i < 1024; i++) {
-		WindowKeyEvents.push_back(false);
-	}
-	/* Creating Previous CursorPos */
-	glm::vec<2, GLfloat> PreviousPos(0.f);
-	/* Creating Current CursorPos */
-	glm::vec<2, GLfloat> CurrentPos(0.f); /* this shit is not 0 by default at declaration stage, so initialize it to zero */
-	/* Creating Delta CursorPos */
-	glm::vec<2, GLfloat> DeltaPos(0.f);
-
-	/* Pushing */
-	WindowIndices.push_back(window);
-	KeyEvents.push_back(WindowKeyEvents);
-	PreviousCursorPos.push_back(PreviousPos);
-	CurrentCursorPos.push_back(CurrentPos);
-	DeltaCursorPos.push_back(DeltaPos);
-
-	/* Binding Callbacks */
-	glfwSetKeyCallback(window, Window::InputEvent_Callback);
-	glfwSetCursorPosCallback(window, Window::CursorPos_Callback);
-}
-void Window::ClearInput() { /* efficiently removes all elements with matching window index */
-	/* Getting the Index of GLFWwindow */
-	GLuint WindowIndex = GetWindowIndex(window);
-
-	/*  Erasing GLFWwindow*/
-	WindowIndices.at(WindowIndex) = nullptr; /* nulling before erasing */
-	WindowIndices.erase(WindowIndices.begin() + WindowIndex);
-	
+void Window::ClearInput() {
 	/* Erasing KeyEvents */
-	std::vector<bool>& WindowKeyEvents = KeyEvents.at(WindowIndex);
-	for (size_t i = 0; i < WindowKeyEvents.size(); i++) { /* falsing out before erasing */
-		WindowKeyEvents.at(i) = false;
+	for (size_t i = 0; i < KeyEvents.size(); i++) {
+		KeyEvents.at(i) = false;
 	}
-	WindowKeyEvents.clear(); 
-	KeyEvents.erase(KeyEvents.begin() + WindowIndex);
-
-	/* Erasing Previous Cursor Pos */
-	glm::vec<2, GLfloat>& PreviousPos = PreviousCursorPos.at(WindowIndex);
-	PreviousPos = glm::vec<2, GLfloat>(0.f); /* zeroing out before erasing */
-	PreviousCursorPos.erase(PreviousCursorPos.begin() + WindowIndex);
-	/* Erasing Current Cursor Pos */
-	glm::vec<2, GLfloat>& CurrentPos = CurrentCursorPos.at(WindowIndex);
-	CurrentPos = glm::vec<2, GLfloat>(0.f); /* zeroing out before erasing */
-	CurrentCursorPos.erase(CurrentCursorPos.begin() + WindowIndex);
+	KeyEvents.clear();
+	CurrentCursorPos, PreviousCursorPos, DeltaCursorPos = glm::vec<2, GLfloat>(0.f);
 }
 
 void Window::InputEvent_Callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
 	if (key < 0 || key > 1024) return;
 
-	KeyEvents.at(GetWindowIndex(window)).at(key) = action;
+	Window* Obj = static_cast<Window*>(glfwGetWindowUserPointer(window));
+	Obj->KeyEvents.at(key) = action;
 }
 void Window::CursorPos_Callback(GLFWwindow* window, double xpos, double ypos) {
-	glm::vec<2, GLfloat>& CurrentPos = CurrentCursorPos.at(GetWindowIndex(window));
-	CurrentPos.x = (float)xpos;
-	CurrentPos.y = (float)ypos;
+
+	Window* Obj = static_cast<Window*>(glfwGetWindowUserPointer(window));
+	Obj->CurrentCursorPos.x = (float)xpos;
+	Obj->CurrentCursorPos.y = (float)ypos;
 }
 
 void Window::CalculateDeltaCursorPos() {
-	
+	/* Delta Cursor Pos */
+	DeltaCursorPos.x = CurrentCursorPos.x - PreviousCursorPos.x;
+	DeltaCursorPos.y = CurrentCursorPos.y - PreviousCursorPos.y;
+
+	PreviousCursorPos.x = CurrentCursorPos.x;
+	PreviousCursorPos.y = CurrentCursorPos.y;
 }
 
 const std::vector<bool>& Window::GetKeyEvents() const { 
-	return KeyEvents.at(GetWindowIndex(window)); 
+	return KeyEvents; 
 }
 const glm::vec<2, GLfloat>& Window::GetCursorPos() const {
-	return CurrentCursorPos.at(GetWindowIndex(window));
+	return CurrentCursorPos;
 }
 const glm::vec<2, GLfloat>& Window::GetDeltaCursorPos() const {
-	return DeltaCursorPos.at(GetWindowIndex(window));
+	return DeltaCursorPos;
 }
