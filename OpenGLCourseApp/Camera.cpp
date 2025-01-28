@@ -3,8 +3,6 @@
 #include "Camera.h"
 #include "Nani/NaniMath.h"
 
-#include "Nani/NaniDebug.h"
-
 // transformation on matrix are only used once, since it has += behaviour
 // must have native location, rotation, scale
 Camera::Camera() {
@@ -28,18 +26,22 @@ Camera::~Camera() {
 
 void Camera::UpdateCameraLocation(GLfloat DeltaTime, const std::vector<bool>& KeyEvents) {
 	glm::vec<3, GLfloat> ForwardVector(0.f);
-	ForwardVector.x = -glm::cos(glm::radians<GLfloat>(Rotation.x)) * glm::sin(glm::radians<GLfloat>(Rotation.y));
-	ForwardVector.y = glm::sin(glm::radians<GLfloat>(Rotation.x));
-	ForwardVector.z = glm::cos(glm::radians<GLfloat>(Rotation.x)) * glm::cos(glm::radians<GLfloat>(Rotation.y));
+	ForwardVector.x = glm::cos(glm::radians<GLfloat>(Rotation.x)) * glm::sin(glm::radians<GLfloat>(Rotation.y));
+	ForwardVector.y = -glm::sin(glm::radians<GLfloat>(Rotation.x));
+	ForwardVector.z = -glm::cos(glm::radians<GLfloat>(Rotation.x)) * glm::cos(glm::radians<GLfloat>(Rotation.y));
 
-	glm::vec<3, GLfloat> RightVector = glm::cross(ForwardVector, WorldUpVector);
+	glm::vec<3, GLfloat> RightVector(0.f); // = glm::cross(ForwardVector, WorldUpVector); /* cross product working but increment is low when totally looking down */
+	RightVector.x = glm::cos(glm::radians<GLfloat>(Rotation.y));
+	RightVector.y = 0.f;
+	RightVector.z = glm::sin(glm::radians<GLfloat>(Rotation.y));
 	//glm::vec<3, GLfloat> UpVector = glm::cross(ForwardVector, RightVector); /* using world up vector instead */
 
 	glm::vec<3, GLfloat> EmptyVector = glm::vec<3, GLfloat>(0.f);
 
-	Location += ((KeyEvents.at(ForwardKey)) ?  ForwardVector : (KeyEvents.at(BackwardKey)) ? -ForwardVector : EmptyVector) * DeltaTime;
-	Location += ((KeyEvents.at(RightKey))   ?  RightVector   : (KeyEvents.at(LeftKey))     ? -RightVector   : EmptyVector) * DeltaTime;
-	Location += ((KeyEvents.at(UpKey))      ? -WorldUpVector : (KeyEvents.at(DownKey))     ?  WorldUpVector : EmptyVector) * DeltaTime; /* negating, since camera is stationary and the world should go down when pressing up */
+	/* negating, since camera is stationary and the world should orient opposite */
+	Location -= ((KeyEvents.at(ForwardKey)) ? ForwardVector : (KeyEvents.at(BackwardKey)) ? -ForwardVector : EmptyVector) * DeltaTime;
+	Location -= ((KeyEvents.at(RightKey))   ? RightVector   : (KeyEvents.at(LeftKey))     ? -RightVector   : EmptyVector) * DeltaTime;
+	Location -= ((KeyEvents.at(UpKey))      ? WorldUpVector : (KeyEvents.at(DownKey))     ? -WorldUpVector : EmptyVector) * DeltaTime; 
 }
 void Camera::UpdateCameraRotation(glm::vec<2, GLfloat> DeltaCursorPos) {
 	Rotation.x = glm::clamp<GLfloat>(Nani::NormalizeAngle(Rotation.x + DeltaCursorPos.y * Sensitivity.x), -89.f, 89.f);

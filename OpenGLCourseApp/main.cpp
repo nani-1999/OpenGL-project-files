@@ -20,6 +20,8 @@
 #include "Window.h"
 #include "Camera.h"
 
+#include "Nani/NaniMath.h"
+
 /* @DEBUG */
 #include <iomanip>
 #include "Nani/NaniDebug.h"
@@ -183,24 +185,29 @@ int main()
 		/* using Shaders[0] */
 		Shaders.at(0)->UseShader();
 
+		/* Math */
+		GLfloat Sine = glm::sin(glm::radians<GLfloat>(Time * 100.f));
+		GLfloat Frac = Nani::Frac(Time * 0.2f);
+		GLfloat RAInterp = (Frac * 360.f - 180.f);
+
 		/* Shader Model 1 */
 		glm::mat<4, 4, GLfloat> model(1.f);
 		/* Translate */
-		model = glm::translate(model, glm::vec<3, GLfloat>(0.f, 2.f, 0.f));
+		model = glm::translate(model, glm::vec<3, GLfloat>(0.6f, Sine * 0.5f, 0.f));
 		/* Scale */
 		model = glm::scale(model, glm::vec<3, GLfloat>(0.3f, 0.3f, 0.3f));
 		/* Rotate */
-		//model = glm::rotate(model, glm::radians<GLfloat>(RotateInterp), glm::vec<3, GLfloat>(0.2f, 1.f, 0.5f));
+		model = glm::rotate(model, glm::radians<GLfloat>(RAInterp), glm::vec<3, GLfloat>(0.2f, 1.f, 0.5f));
 		/* Model Matrix */
 		glUniformMatrix4fv(UniformModel, 1, GL_FALSE, glm::value_ptr(model));
 		/* Rendering Mesh */
 		Meshes.at(0)->RenderMesh();
 
 		/* Shader Model 2 */
-		model = glm::mat<4, 4, GLfloat>(1.f); /* We need to reset the model value and apply new values, since it has previous transformation values */
-		model = glm::translate(model, glm::vec<3, GLfloat>(0.f, 0.f , 0.f));
-		model = glm::scale(model, glm::vec<3, GLfloat>(0.3f, 0.3f, 0.3f));
-		//model = glm::rotate(model, glm::radians<GLfloat>(45.f * Sine), glm::vec<3, GLfloat>(0.f, 0.f, 1.f)); /* rotation vec must be not zero vector, but angle can be zero. One Radian = PI/180 */
+		model = glm::mat<4, 4, GLfloat>(1.f); /* We need to reset the model value and apply new values, since it has previous model transformation values */
+		model = glm::translate(model, glm::vec<3, GLfloat>(-0.6f, -Sine * 0.5f , 0.f));
+		model = glm::scale(model, glm::vec<3, GLfloat>(-0.3f, 0.3f, 0.3f));
+		model = glm::rotate(model, glm::radians<GLfloat>(RAInterp), glm::vec<3, GLfloat>(0.2f, 1.f, 0.5f)); /* rotation vec must be not zero vector, but angle can be zero. One Radian = PI/180 */
 		glUniformMatrix4fv(UniformModel, 1, GL_FALSE, glm::value_ptr(model));
 		Meshes.at(1)->RenderMesh();
 

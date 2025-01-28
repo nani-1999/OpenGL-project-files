@@ -6,12 +6,12 @@
 #define N_SMALL_NUMBER			(1.e-8f)
 
 namespace Nani {
-	float NormalizeAngle(float Angle) {
+	static float NormalizeAngle(float Angle) {
 		if (Angle > 180.f) Angle -= 360.f;
 		if (Angle < -180.f) Angle += 360.f;
 		return Angle;
 	}
-	float RAInterpTo(float CurrentRotationAxis, float TargetRotationAxis, float DeltaTime, float InterpSpeed) {
+	static float RAInterpTo(float CurrentRotationAxis, float TargetRotationAxis, float DeltaTime, float InterpSpeed) {
 		if (InterpSpeed <= 0.f)
 		{
 			return TargetRotationAxis;
@@ -27,5 +27,8 @@ namespace Nani {
 		const float DeltaRotationAxis = DifferenceAngle * glm::clamp<float>(DeltaTime * InterpSpeed, 0.f, 1.f);
 
 		return NormalizeAngle(CurrentRotationAxis + DeltaRotationAxis); /* normalized here also */
+	}
+	static float Frac(float Value) {
+		return -(int)Value + Value; /* basically returning only the fractal value of floating point */
 	}
 }
